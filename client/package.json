@@ -1,0 +1,17 @@
+{
+  "name": "knowledge-ascension-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --open"
+  },
+  "dependencies": {
+    "dexie": "^4.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.1"
+  }
+}
