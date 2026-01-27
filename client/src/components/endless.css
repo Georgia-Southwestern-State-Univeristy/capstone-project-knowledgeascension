@@ -1,0 +1,206 @@
+.endRoot, .endRoot * { box-sizing: border-box; }
+.endRoot{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  background:#000;
+}
+.endStage{
+  position:absolute;
+  width:1920px;
+  height:1080px;
+  left:50%;
+  top:50%;
+  transform-origin:center;
+}
+
+/* Background */
+.arenaBg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:0;
+}
+
+/* HUD */
+.hud{
+  position:absolute;
+  left:20px;
+  top:18px;
+  z-index:50;
+  color:#fff;
+  font-size:18px;
+  text-shadow:0 2px 8px rgba(0,0,0,0.85);
+}
+.menuBtn{
+  position:absolute;
+  left:20px;
+  top:80px;
+  z-index:50;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(0,0,0,0.35);
+  color:#fff;
+  cursor:pointer;
+}
+
+/* Sprites */
+.heroSprite{
+  position:absolute;
+  left:120px;
+  bottom:250px;
+  width:520px;
+  z-index:5;
+  image-rendering:pixelated;
+}
+.enemySprite{
+  position:absolute;
+  right:220px;
+  top:160px;
+  width:420px;
+  z-index:5;
+  image-rendering:pixelated;
+}
+
+/* Bars */
+.bar{
+  position:absolute;
+  width:860px;
+  z-index:30;
+}
+.barFrame{ width:100%; height:auto; display:block; }
+.barName{
+  position:absolute;
+  left:95px;
+  top:18px;
+  width:420px;
+  font-size:28px;
+  color:#fff;
+  text-shadow:0 2px 6px rgba(0,0,0,0.75);
+}
+.barFill{
+  position:absolute;
+  left:520px;
+  top:86px;
+  width:300px;
+  height:18px;
+  background:#fff;
+  transform-origin:left center;
+  border-radius:8px;
+  opacity:0.95;
+}
+.enemyBar{ left:60px; top:60px; }
+.heroBar{ right:60px; bottom:270px; }
+
+/* ✅ Question box LOWER */
+.qWrap{
+  position:absolute;
+  left:50%;
+  bottom:-375px;            /* ✅ lowered */
+  transform:translateX(-50%);
+  width:1800px;
+  z-index:40;
+}
+.qFrame{ width:100%; height:auto; display:block; }
+
+/* Question text inside white area */
+.qText{
+  position:absolute;
+  left:90px;
+  top:410px;
+  width:1180px;
+  height:165px;
+
+  font-size:30px;
+  color:#331b00;
+  line-height:1.2;
+
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:4;
+  -webkit-box-orient:vertical;
+}
+
+/* Answers INSIDE the colored boxes */
+.ans{
+  position:absolute;
+  right:0px;
+  width:470px;
+  height:770px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  padding:0 16px;
+  text-align:left;
+}
+.ans span{
+  display:block;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-size:22px;
+  color:#ffffff;
+}
+.ans.a1{ top:42px; }
+.ans.a2{ top:104px; }
+.ans.a3{ top:166px; }
+.ans.a4{ top:228px; }
+.ans:hover{ filter:brightness(1.12); }
+.ans:disabled{ cursor:default; opacity:0.7; }
+
+/* Start overlay */
+.startOverlay{
+  position:absolute;
+  inset:0;
+  z-index:100;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.35);
+}
+.startCard{
+  width:520px;
+  padding:18px;
+  border-radius:16px;
+  background:rgba(0,0,0,0.55);
+  border:1px solid rgba(255,255,255,0.18);
+  color:#fff;
+  text-align:center;
+}
+.startTitle{ font-size:34px; margin-bottom:6px; }
+.startSub{ font-size:18px; opacity:0.9; margin-bottom:14px; }
+.startBtn{
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(255,255,255,0.12);
+  color:#fff;
+  cursor:pointer;
+}
+
+/* Death screen */
+.deathOverlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  z-index:120;
+  background:rgba(0,0,0,0.35);
+}
+.youDied{ width:520px; }
+.deathStats{ color:#fff; font-size:26px; text-shadow:0 2px 10px rgba(0,0,0,0.8); }
+.deathButtons{ display:flex; gap:16px; }
+.deathButtons button{
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(0,0,0,0.35);
+  color:#fff;
+  cursor:pointer;
+}
