@@ -1,66 +1,107 @@
-import Dexie from "dexie";
+// client/src/db/questionsDb.js
+// Simple in-memory question bank (no IndexedDB)
+// Shape:
+// { id:number, text:string, a:string, b:string, c:string, d:string, correct:"a"|"b"|"c"|"d" }
 
-export const db = new Dexie("knowledge_ascension_db");
+const QUESTIONS = [
+  {
+    id: 1,
+    text: "What does CPU stand for?",
+    a: "Central Processing Unit",
+    b: "Computer Personal Unit",
+    c: "Central Power Utility",
+    d: "Control Program Unit",
+    correct: "a",
+  },
+  {
+    id: 2,
+    text: "Which data structure uses FIFO?",
+    a: "Stack",
+    b: "Queue",
+    c: "Tree",
+    d: "Graph",
+    correct: "b",
+  },
+  {
+    id: 3,
+    text: "Which protocol is used for secure web browsing?",
+    a: "HTTP",
+    b: "FTP",
+    c: "HTTPS",
+    d: "SMTP",
+    correct: "c",
+  },
+  {
+    id: 4,
+    text: "What is 2^5?",
+    a: "10",
+    b: "16",
+    c: "32",
+    d: "64",
+    correct: "c",
+  },
+  {
+    id: 5,
+    text: "Which one is a relational database?",
+    a: "MySQL",
+    b: "MongoDB",
+    c: "Redis",
+    d: "Neo4j",
+    correct: "a",
+  },
+  {
+    id: 6,
+    text: "What does RAM stand for?",
+    a: "Read Access Memory",
+    b: "Random Access Memory",
+    c: "Run Access Module",
+    d: "Rapid Action Memory",
+    correct: "b",
+  },
+  {
+    id: 7,
+    text: "Which is a version control system?",
+    a: "Node.js",
+    b: "Git",
+    c: "NPM",
+    d: "React",
+    correct: "b",
+  },
+  {
+    id: 8,
+    text: "Which language is primarily used for styling web pages?",
+    a: "HTML",
+    b: "CSS",
+    c: "JavaScript",
+    d: "Python",
+    correct: "b",
+  },
+  {
+    id: 9,
+    text: "What does SQL stand for?",
+    a: "Structured Query Language",
+    b: "Simple Query Logic",
+    c: "System Queue Language",
+    d: "Standard Question List",
+    correct: "a",
+  },
+  {
+    id: 10,
+    text: "What is 8 * 8?",
+    a: "16",
+    b: "32",
+    c: "64",
+    d: "128",
+    correct: "c",
+  },
+];
 
-db.version(1).stores({
-  questions: "++id, text"
-});
-
-// Seed once if empty
 export async function seedQuestionsIfNeeded() {
-  const count = await db.questions.count();
-  if (count > 0) return;
-
-  await db.questions.bulkAdd([
-    {
-      text: "What does CPU stand for?",
-      a: "Central Processing Unit",
-      b: "Computer Personal Unit",
-      c: "Central Power Utility",
-      d: "Control Program Unit",
-      correct: "a"
-    },
-    {
-      text: "Which data structure uses FIFO?",
-      a: "Stack",
-      b: "Queue",
-      c: "Tree",
-      d: "Graph",
-      correct: "b"
-    },
-    {
-      text: "Which protocol is used for secure web browsing?",
-      a: "HTTP",
-      b: "FTP",
-      c: "HTTPS",
-      d: "SMTP",
-      correct: "c"
-    },
-    {
-      text: "What is 2^5?",
-      a: "10",
-      b: "16",
-      c: "32",
-      d: "64",
-      correct: "c"
-    },
-    {
-      text: "Which one is a relational database?",
-      a: "MySQL",
-      b: "Redis",
-      c: "MongoDB",
-      d: "Neo4j",
-      correct: "a"
-    }
-  ]);
+  return true;
 }
 
 export async function getRandomQuestion() {
-  const count = await db.questions.count();
-  if (count === 0) return null;
-
-  // Dexie doesn't have a native random pick, so we pick by offset
-  const idx = Math.floor(Math.random() * count);
-  const q = await db.questions.offset(idx).first();
-  return q ?? null;
+  if (!QUESTIONS.length) return null;
+  const q = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+  return { ...q };
 }

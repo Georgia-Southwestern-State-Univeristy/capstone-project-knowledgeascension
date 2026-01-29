@@ -5,6 +5,8 @@
   overflow:hidden;
   background:#000;
 }
+
+/*  Everything below uses pixel positioning for that stage. */
 .endStage{
   position:absolute;
   width:1920px;
@@ -14,7 +16,7 @@
   transform-origin:center;
 }
 
-/* Background */
+/* Background arena */
 .arenaBg{
   position:absolute;
   inset:0;
@@ -24,7 +26,32 @@
   z-index:0;
 }
 
-/* HUD */
+/* Hero and Enemy sprite placement */
+.heroSprite{
+  position:absolute;
+  left:10px;     /* Manual: move hero left/right */
+  bottom:-60px;     /* Manual: move hero up/down */
+  width:800px;     /* Manual: resize hero */
+  z-index:5;
+  image-rendering:pixelated;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+.enemySprite{
+  position:absolute;
+  right:500px;     /* Manual: move enemy left/right */
+  top:100px;       /* Manual: move enemy up/down */
+  width:700px;     /* Manual: resize enemy */
+  z-index:5;
+  image-rendering:pixelated;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+/* -------------------------------------------------------
+   HUD
+-------------------------------------------------------- */
 .hud{
   position:absolute;
   left:20px;
@@ -33,7 +60,47 @@
   color:#fff;
   font-size:18px;
   text-shadow:0 2px 8px rgba(0,0,0,0.85);
+  user-select:none;
 }
+
+/* --- Coins display in HUD (icon + number) --- */
+.hudRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.hudCoinIcon{
+  width:100px;     /* Manual: HUD coin icon size */
+  height:100px;    /* Manual: HUD coin icon size */
+  image-rendering:pixelated;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+.hudCoinsNum{
+  font-weight:700;
+}
+
+/* +X coin gain popup near HUD */
+.coinPop{
+  position:absolute;
+  z-index:80;
+  color:#ffd86b;
+  font-weight:900;
+  font-size:20px;
+  text-shadow:0 3px 10px rgba(0,0,0,0.85);
+  pointer-events:none;
+  user-select:none;
+  animation: popFloat 1.05s ease-out forwards;
+}
+
+@keyframes popFloat{
+  0%{ opacity:0; transform: translateY(10px) scale(0.96); }
+  15%{ opacity:1; transform: translateY(0px) scale(1.02); }
+  100%{ opacity:0; transform: translateY(-22px) scale(1.0); }
+}
+
 .menuBtn{
   position:absolute;
   left:20px;
@@ -47,141 +114,250 @@
   cursor:pointer;
 }
 
-/* Sprites */
-.heroSprite{
+/* -------------------------------------------------------
+   Music Dock (BOTTOM-LEFT)
+-------------------------------------------------------- */
+.musicDock{
   position:absolute;
-  left:120px;
-  bottom:250px;
-  width:520px;
-  z-index:5;
-  image-rendering:pixelated;
-}
-.enemySprite{
-  position:absolute;
-  right:220px;
-  top:160px;
-  width:420px;
-  z-index:5;
-  image-rendering:pixelated;
+  left:20px;       /* Manual: move dock left/right */
+  bottom:20px;     /* Manual: move dock up/down */
+  z-index:70;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.20);
+  background:rgba(0,0,0,0.30);
+  backdrop-filter: blur(3px);
 }
 
-/* Bars */
+.musicBtn{
+  padding:8px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(0,0,0,0.35);
+  color:#fff;
+  cursor:pointer;
+}
+
+.musicLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  color:#fff;
+  user-select:none;
+}
+
+.musicLabel input[type="range"]{
+  width:160px;
+}
+
+/* -------------------------------------------------------
+   Bars (enemy/hero)
+-------------------------------------------------------- */
 .bar{
   position:absolute;
-  width:860px;
+  width:860px;     /* Manual: bar PNG display width */
   z-index:30;
+  user-select:none;
 }
-.barFrame{ width:100%; height:auto; display:block; }
+
+.barFrame{
+  width:100%;
+  height:auto;
+  display:block;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
 .barName{
   position:absolute;
-  left:95px;
-  top:18px;
-  width:420px;
-  font-size:28px;
-  color:#fff;
-  text-shadow:0 2px 6px rgba(0,0,0,0.75);
+  left:150px;
+  top:200px;
+  width:450px;
+  font-size:45px;
+  color:#2b1a0a;
+  text-shadow:0 2px 6px rgba(255, 196, 0, 0.75);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  pointer-events:none;
+  user-select:none;
 }
+
+/* HP fill overlay position inside the bar PNGs */
 .barFill{
   position:absolute;
-  left:520px;
-  top:86px;
-  width:300px;
-  height:18px;
-  background:#fff;
+  left:455px;      /* Manual: move fill left/right inside bar PNG */
+  top:250px;       /* Manual: move fill up/down inside bar PNG */
+  width:275px;     /* Manual: length of fill region */
+  height:25px;     /* Manual: thickness of fill region */
+  background:#097000;
   transform-origin:left center;
   border-radius:8px;
   opacity:0.95;
+  pointer-events:none;
 }
-.enemyBar{ left:60px; top:60px; }
-.heroBar{ right:60px; bottom:270px; }
 
-/* ✅ Question box LOWER */
+.enemyBar{
+  position:absolute;
+  width:860px;
+  z-index:30;
+  left:140px;      /* Manual: move enemy UI left/right */
+  top:-100px;      /* Manual: move enemy UI up/down */
+}
+
+.heroBar{
+  position:absolute;
+  width:860px;
+  z-index:30;
+  right:0px;       /* Manual: move hero UI left/right */
+  bottom:160px;    /* Manual: move hero UI up/down */
+}
+
+/* -------------------------------------------------------
+   Question Box
+-------------------------------------------------------- */
 .qWrap{
   position:absolute;
   left:50%;
-  bottom:-375px;            /* ✅ lowered */
+  bottom:-300px;   /* Manual: lower/raise question box */
+  width:1800px;    /* Manual: resize question box container */
   transform:translateX(-50%);
-  width:1800px;
   z-index:40;
+  user-select:none;
 }
-.qFrame{ width:100%; height:auto; display:block; }
 
-/* Question text inside white area */
+.qFrame{
+  width:100%;
+  height:auto;
+  display:block;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
 .qText{
   position:absolute;
-  left:90px;
-  top:410px;
-  width:1180px;
-  height:165px;
-
-  font-size:30px;
-  color:#331b00;
+  left:100px;      /* Manual: question text x inside box */
+  top:430px;       /* Manual: question text y inside box */
+  width:1180px;    /* Manual: question text width */
+  height:165px;    /* Manual: question text height */
+  font-size:40px;
+  color:#111;
   line-height:1.2;
-
   overflow:hidden;
   display:-webkit-box;
   -webkit-line-clamp:4;
   -webkit-box-orient:vertical;
+  pointer-events:none;
+  user-select:none;
 }
 
-/* Answers INSIDE the colored boxes */
+/* Manual: overall answer column placement */
 .ans{
   position:absolute;
-  right:0px;
-  width:470px;
-  height:770px;
+  right:-75px;      /* Manual: move answer column left/right */
+  width:520px;     /* Manual: answer button width */
+  height:92px;     /* Manual: answer button height (one row only) */
   border:none;
   background:transparent;
   cursor:pointer;
   padding:0 16px;
   text-align:left;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:manipulation;
 }
+
 .ans span{
   display:block;
+  width:100%;
   overflow:hidden;
   white-space:nowrap;
   text-overflow:ellipsis;
-  font-size:22px;
+  font-size:30px;  /* Manual: answer font size */
   color:#ffffff;
+  text-shadow:0 2px 6px rgba(0,0,0,0.8);
+  pointer-events:none;
+  user-select:none;
 }
-.ans.a1{ top:42px; }
-.ans.a2{ top:104px; }
-.ans.a3{ top:166px; }
-.ans.a4{ top:228px; }
+
+/* Manual: answer row positions */
+.ans.a1{ top:380px; }
+.ans.a2{ top:450px; }
+.ans.a3{ top:510px; }
+.ans.a4{ top:575px; }
+
 .ans:hover{ filter:brightness(1.12); }
 .ans:disabled{ cursor:default; opacity:0.7; }
 
-/* Start overlay */
-.startOverlay{
-  position:absolute;
-  inset:0;
-  z-index:100;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,0.35);
-}
-.startCard{
-  width:520px;
-  padding:18px;
-  border-radius:16px;
-  background:rgba(0,0,0,0.55);
-  border:1px solid rgba(255,255,255,0.18);
-  color:#fff;
-  text-align:center;
-}
-.startTitle{ font-size:34px; margin-bottom:6px; }
-.startSub{ font-size:18px; opacity:0.9; margin-bottom:14px; }
-.startBtn{
-  padding:12px 18px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,0.25);
-  background:rgba(255,255,255,0.12);
-  color:#fff;
-  cursor:pointer;
+/* -------------------------------------------------------
+   Coin Drop Animation (enemy death)
+-------------------------------------------------------- */
+:root{
+  --coinSize: 120px; /* Manual: EDIT THIS to resize the coin drop sprite */
 }
 
-/* Death screen */
+/*
+  Coin now:
+  - pops up from enemy
+  - arcs HARD left toward hero
+  - lands near bottom-left
+  - short total duration
+*/
+.coinDrop{
+  position:absolute;
+  width:var(--coinSize);
+  height:var(--coinSize);
+  z-index:60;
+  pointer-events:none;
+  image-rendering:pixelated;
+  user-select:none;
+  -webkit-user-drag:none;
+  filter: drop-shadow(0 16px 22px rgba(0,0,0,0.65));
+  animation:
+    coinPopUp 0.22s cubic-bezier(.2,.9,.2,1) forwards,
+    coinArcToHero 0.85s cubic-bezier(.2,.9,.2,1) 0.22s forwards,
+    coinLandBounce 0.55s cubic-bezier(.2,.85,.2,1) 1.07s forwards,
+    coinFade 0.50s ease-out 1.62s forwards;
+}
+
+@keyframes coinPopUp{
+  0%{ opacity:0; transform: translate(0, 0) rotate(0deg) scale(0.70); }
+  100%{ opacity:1; transform: translate(calc(var(--driftX) * 0.12), -90px) rotate(calc(var(--spin) * 0.20)) scale(1.20); }
+}
+
+/* Big arc toward hero bottom-left */
+@keyframes coinArcToHero{
+  0%{ transform: translate(calc(var(--driftX) * 0.12), -90px) rotate(calc(var(--spin) * 0.20)) scale(1.20); }
+  55%{ transform: translate(calc(var(--driftX) * 0.60), -170px) rotate(calc(var(--spin) * 0.70)) scale(1.26); }
+  100%{ transform: translate(var(--driftX), calc(var(--groundY) - 0px)) rotate(var(--spin)) scale(1.12); }
+}
+
+@keyframes coinLandBounce{
+  0%{ transform: translate(var(--driftX), calc(var(--groundY) - 0px)) rotate(calc(var(--spin) + 40deg)) scale(1.12); }
+  55%{ transform: translate(calc(var(--driftX) * 1.02), calc((var(--groundY) - 0px) - 80px)) rotate(calc(var(--spin) + 110deg)) scale(1.16); }
+  100%{ transform: translate(calc(var(--driftX) * 1.03), calc(var(--groundY) - 0px)) rotate(calc(var(--spin) + 180deg)) scale(1.12); }
+}
+
+@keyframes coinFade{
+  0%{ opacity: 1; }
+  100%{
+    opacity: 0;
+    transform: translate(calc(var(--driftX) * 1.03), calc(var(--groundY) - 0px + 8px)) scale(1.05);
+  }
+}
+
+/* -------------------------------------------------------
+   Death Screen
+-------------------------------------------------------- */
 .deathOverlay{
   position:absolute;
   inset:0;
@@ -193,9 +369,20 @@
   z-index:120;
   background:rgba(0,0,0,0.35);
 }
-.youDied{ width:520px; }
-.deathStats{ color:#fff; font-size:26px; text-shadow:0 2px 10px rgba(0,0,0,0.8); }
-.deathButtons{ display:flex; gap:16px; }
+
+.youDied{ width:1000px; }
+
+.deathStats{
+  color:#fff;
+  font-size:35px;
+  text-shadow:0 2px 10px rgba(0,0,0,0.8);
+}
+
+.deathButtons{
+  display:flex;
+  gap:16px;
+}
+
 .deathButtons button{
   padding:12px 18px;
   border-radius:12px;

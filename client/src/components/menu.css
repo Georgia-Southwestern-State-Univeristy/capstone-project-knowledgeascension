@@ -170,3 +170,71 @@
 .musicPanel input{
   width:140px;
 }
+.loginPanel{
+  position:absolute;
+  left:24px;
+  top:24px;
+  width:320px;
+  padding:12px;
+  border-radius:14px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(6px);
+  z-index:50;
+  color:#fff;
+}
+
+.loginTitle{
+  font-size:18px;
+  margin-bottom:8px;
+  font-weight:700;
+}
+
+.loginRow{
+  font-size:14px;
+  opacity:0.95;
+  margin-bottom:6px;
+}
+
+.loginInput{
+  width:100%;
+  padding:10px 10px;
+  margin-bottom:8px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  outline:none;
+}
+
+.loginInput::placeholder{
+  color: rgba(255,255,255,0.7);
+}
+
+.loginBtn{
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.12);
+  color:#fff;
+  cursor:pointer;
+}
+
+.loginLink{
+  margin-top:8px;
+  width:100%;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid transparent;
+  background: transparent;
+  color: rgba(255,255,255,0.85);
+  cursor:pointer;
+  text-decoration: underline;
+}
+
+.loginMsg{
+  margin-top:8px;
+  font-size:13px;
+  opacity:0.95;
+}
