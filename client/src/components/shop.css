@@ -1,0 +1,256 @@
+/* ================================
+   FULLSCREEN MENU (no scroll)
+================================ */
+.menuRoot {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+.menuBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.menuStage {
+  position: absolute;
+  width: 1920px;
+  height: 1080px;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+}
+
+/* ================================
+   TITLE
+================================ */
+.menuTitle {
+  position: absolute;
+  left: 50%;
+  top: 90px;
+  transform: translateX(-50%);
+  width: 820px;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+/* ================================
+   BUTTON BASE
+================================ */
+.imgBtn {
+  position: absolute;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* wrapper so glow can sit behind image */
+.btnWrap {
+  position: relative;
+  width: 100%;
+}
+
+/* ================================
+   ✨ FEATHERED GOLD GLOW
+================================ */
+.goldGlow {
+  position: absolute;
+  inset: -35px; /* larger than button */
+  z-index: 0;
+
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 50%;
+
+  /* soft radial glow */
+  background: radial-gradient(
+    circle,
+    rgba(255, 215, 120, 0.9) 0%,
+    rgba(255, 190, 70, 0.55) 35%,
+    rgba(255, 160, 40, 0.25) 55%,
+    rgba(255, 140, 0, 0.08) 70%,
+    rgba(0, 0, 0, 0) 85%
+  );
+
+  filter: blur(26px); /* feathering */
+  transform: scale(0.85);
+
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+/* show glow on hover */
+.imgBtn:hover .goldGlow {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* ================================
+   BUTTON IMAGE
+================================ */
+.imgBtn img {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  display: block;
+
+  image-rendering: pixelated;
+
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+/* button grow */
+.imgBtn:hover img {
+  transform: scale(1.05);
+}
+
+/* selected (keyboard) subtle glow */
+.modeBtn.selected .goldGlow {
+  opacity: 0.6;
+  transform: scale(1.05);
+}
+
+/* ================================
+   PLACEMENT
+================================ */
+.shopBtn {
+  top: 150px;
+  right: 150px;
+  width: 190px;
+}
+
+.modeBtn {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 520px;
+}
+
+.btn1 {
+  top: 320px;
+}
+
+.btn2 {
+  top: 560px;
+}
+
+.btn3 {
+  top: 800px;
+}
+
+/* ================================
+   MUSIC PANEL
+================================ */
+.musicPanel {
+  position: absolute;
+  left: 30px;
+  bottom: 30px;
+
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+}
+
+.musicPanel button {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.musicPanel input {
+  width: 140px;
+}
+
+/* ================================
+   LOGIN PANEL
+================================ */
+.loginPanel {
+  position: absolute;
+  left: 24px;
+  top: 24px;
+  width: 320px;
+
+  padding: 12px;
+  border-radius: 14px;
+
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+
+  z-index: 50;
+  color: #fff;
+}
+
+.loginTitle {
+  font-size: 18px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.loginRow {
+  font-size: 14px;
+  opacity: 0.95;
+  margin-bottom: 6px;
+}
+
+.loginInput {
+  width: 100%;
+  padding: 10px 10px;
+  margin-bottom: 8px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+
+  color: #fff;
+  outline: none;
+}
+
+.loginInput::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loginBtn {
+  width: 100%;
+  padding: 10px 12px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+
+  color: #fff;
+  cursor: pointer;
+}
+
+.loginLink {
+  margin-top: 8px;
+  width: 100%;
+  padding: 8px 10px;
+
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.loginMsg {
+  margin-top: 8px;
+  font-size: 13px;
+  opacity: 0.95;
+}
