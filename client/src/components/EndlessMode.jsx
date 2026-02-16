@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./endless.css";
 import { seedQuestionsIfNeeded, getRandomQuestion } from "../db/questionsDb";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { getCharacterById } from "../db/characters";
 
 const UI = {
   ENEMY_BAR: "/assets/ui/enemy_bar.png",
@@ -49,10 +50,8 @@ function normalizeKey(raw) {
 export default function EndlessMode({ onBackToMenu }) {
   const { username, profile, addCoins } = useAuth();
 
-  // Manual: increase for faster kills
   const HERO_DAMAGE = 25;
 
-  // Stage scaling
   const [scale, setScale] = useState(1);
   useEffect(() => {
     const W = 1920, H = 1080;
@@ -66,8 +65,10 @@ export default function EndlessMode({ onBackToMenu }) {
     [scale]
   );
 
-  const equipped = (profile?.equippedCharacter || "knight").toLowerCase();
-  const heroBack = `/assets/characters/${equipped}/back.png`;
+  // FIX: folderName handles your capitalized character folders
+  const equippedId = String(profile?.equippedCharacter || "knight").toLowerCase();
+  const equippedChar = getCharacterById(equippedId);
+  const heroBack = `/assets/characters/${equippedChar.folderName}/back.png`;
 
   const makeEnemy = () => {
     const e = pick(ENEMIES);
@@ -83,7 +84,6 @@ export default function EndlessMode({ onBackToMenu }) {
   const [enemy, setEnemy] = useState(() => makeEnemy());
   const [question, setQuestion] = useState(null);
 
-  // Strong lock (state + ref)
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
 
@@ -95,19 +95,14 @@ export default function EndlessMode({ onBackToMenu }) {
   useEffect(() => { enemyRef.current = enemy; }, [enemy]);
   useEffect(() => { questionRef.current = question; }, [question]);
 
-  // Coin visuals
   const [coinDrops, setCoinDrops] = useState([]);
   const [coinPop, setCoinPop] = useState(null);
   const coinIdRef = useRef(1);
 
-  // -----------------------------
-  // MUSIC (Play/Pause + Volume)
-  // -----------------------------
   const audioRef = useRef(null);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicVolume, setMusicVolume] = useState(0.6);
 
-  // create music audio once
   useEffect(() => {
     const audio = new Audio(battleTrack);
     audio.loop = true;
@@ -124,13 +119,11 @@ export default function EndlessMode({ onBackToMenu }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // keep volume synced
   useEffect(() => {
     const a = audioRef.current;
     if (a) a.volume = musicVolume;
   }, [musicVolume]);
 
-  // stop music when dead
   useEffect(() => {
     if (!dead) return;
     const a = audioRef.current;
@@ -167,9 +160,6 @@ export default function EndlessMode({ onBackToMenu }) {
     setMusicPlaying(false);
   };
 
-  // -----------------------------
-  // COIN DROP SFX
-  // -----------------------------
   const sfxCooldownRef = useRef(0);
   const playCoinSfx = () => {
     const now = Date.now();
@@ -183,7 +173,6 @@ export default function EndlessMode({ onBackToMenu }) {
     } catch {}
   };
 
-  // DB seed + first question
   useEffect(() => {
     (async () => {
       await seedQuestionsIfNeeded();
@@ -192,10 +181,8 @@ export default function EndlessMode({ onBackToMenu }) {
   }, []);
 
   const nextQuestion = async () => setQuestion(await getRandomQuestion());
-
   const rollCoinDrop = () => (Math.random() < 0.35 ? randInt(1, 7) : 0);
 
-  // Save coins incrementally to account
   const prevCoinsRef = useRef(0);
   useEffect(() => {
     const prev = prevCoinsRef.current;
@@ -206,36 +193,23 @@ export default function EndlessMode({ onBackToMenu }) {
     prevCoinsRef.current = coinsEarned;
   }, [coinsEarned, username, addCoins]);
 
-  /**
-   * Coin path:
-   * Starts near enemy area and arcs toward hero side (bottom-left).
-   * CSS uses:
-   * --driftX (negative pulls coin left)
-   * --groundY (landing y)
-   */
   const spawnCoinDrop = (amount) => {
     playCoinSfx();
 
     const id = coinIdRef.current++;
 
-    // Start near enemy sprite area (based on your manual CSS: right:500, top:200)
-    const startX = 1180; // Manual: enemy-side start X
-    const startY = 360;  // Manual: enemy-side start Y
+    const startX = 1180;
+    const startY = 360;
 
-    // Drift toward hero bottom-left
-    const driftX = `${randInt(-980, -760)}px`; // strong left travel
+    const driftX = `${randInt(-980, -760)}px`;
     const spin = `${randInt(520, 980)}deg`;
-    const groundY = `${randInt(820, 900)}px`; // bottom-ish landing near hero
+    const groundY = `${randInt(820, 900)}px`;
 
-    setCoinDrops((d) => [
-      ...d,
-      { id, x: startX, y: startY, driftX, spin, groundY }
-    ]);
+    setCoinDrops((d) => [...d, { id, x: startX, y: startY, driftX, spin, groundY }]);
 
-    // Shorter lifetime (matches CSS timing)
     setTimeout(() => {
       setCoinDrops((d) => d.filter((c) => c.id !== id));
-    }, 2600);
+    }, 2200);
 
     setCoinPop({ id: `pop-${id}`, amount });
     setTimeout(() => setCoinPop(null), 1100);
@@ -254,8 +228,6 @@ export default function EndlessMode({ onBackToMenu }) {
     prevCoinsRef.current = 0;
     setCoinDrops([]);
     setCoinPop(null);
-
-    // Keep music user-controlled (no autoplay)
     stopMusicHard();
   };
 
@@ -377,7 +349,6 @@ export default function EndlessMode({ onBackToMenu }) {
           )}
         </div>
 
-        {/* Music dock moved to bottom-left */}
         <div className="musicDock">
           <button type="button" className="musicBtn" onClick={toggleMusic}>
             {musicPlaying ? "Pause" : "Play"}
@@ -426,7 +397,7 @@ export default function EndlessMode({ onBackToMenu }) {
 
         <div className="bar heroBar">
           <img className="barFrame" src={UI.HERO_BAR} alt="" draggable="false" />
-          <div className="barName">{equipped}</div>
+          <div className="barName">{equippedChar.id}</div>
           <div className="barFill" style={{ transform: `scaleX(${heroPct})` }} />
         </div>
 

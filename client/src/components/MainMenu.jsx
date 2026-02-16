@@ -3,7 +3,7 @@ import "./menu.css";
 import trackLobby from "../assets/audio/track_lobby.mp3";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function MainMenu({ onStartEndless }) {
+export default function MainMenu({ onStartEndless, onOpenShop }) {
   const { loading, username, profile, signup, login, logout } = useAuth();
 
   const [selected, setSelected] = useState("1V1");
@@ -144,7 +144,8 @@ export default function MainMenu({ onStartEndless }) {
 
         <img className="menuTitle" src="/assets/menu/title.png" alt="Knowledge Ascension" draggable="false" />
 
-        <button className="imgBtn shopBtn" onClick={() => console.log("Shop later")}>
+        {/* FIXED: SHOP now navigates */}
+        <button className="imgBtn shopBtn" onClick={() => onOpenShop?.()}>
           <Btn imgSrc="/assets/menu/btn_shop.png" alt="Shop" />
         </button>
 
