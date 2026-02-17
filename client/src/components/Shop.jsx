@@ -3,9 +3,19 @@ import "./shop.css";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { CHARACTERS, DEFAULT_CHARACTER_ID } from "../db/characters";
 
+const ARENAS = [
+  "/assets/arenas/forest.png",
+  "/assets/arenas/desert.png",
+  "/assets/arenas/temple.png",
+];
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 /*
-  MANUAL: Edit prices here.
-  - id MUST match the CHARACTERS ids (lowercase).
+  MANUAL (PRICES):
+  Edit prices here (code-only).
 */
 const PRICES = {
   knight: 0,
@@ -19,22 +29,12 @@ const PRICES = {
 };
 
 const COIN_ICON = "/assets/ui/coin.png";
+const SCROLL_IMG = "/assets/ui/Scroll.png";
+const SHOP_ICON = "/assets/ui/Shop_icon.png";
 
-// Buttons from: client/public/assets/ui/
 const BTN_MENU = "/assets/ui/btn_menu.png";
 const BTN_PURCHASE = "/assets/ui/btn_purchase.png";
 const BTN_EQUIP = "/assets/ui/btn_equip.png";
-
-// Same arena list style as Endless: random each time you enter Shop
-const ARENAS = [
-  "/assets/arenas/forest.png",
-  "/assets/arenas/desert.png",
-  "/assets/arenas/temple.png",
-];
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
 
 export default function Shop({ onBackToMenu }) {
   const { username, profile, purchaseCharacter, equipCharacter } = useAuth();
@@ -42,7 +42,6 @@ export default function Shop({ onBackToMenu }) {
   const [busyId, setBusyId] = useState("");
   const [msg, setMsg] = useState("");
 
-  // Random background each time Shop mounts (entering Shop)
   const [arenaBg, setArenaBg] = useState(() => pick(ARENAS));
   useEffect(() => {
     setArenaBg(pick(ARENAS));
@@ -54,58 +53,66 @@ export default function Shop({ onBackToMenu }) {
 
   const doBuy = async (ch) => {
     if (!username) {
-      setMsg("You must be logged in to purchase characters.");
+      setMsg("You must be logged in to purchase.");
       return;
     }
+    if (typeof purchaseCharacter !== "function") {
+      setMsg("Shop functions not wired yet (purchaseCharacter missing).");
+      return;
+    }
+
     setMsg("");
     setBusyId(ch.id);
+
     try {
       const price = PRICES[ch.id] ?? 0;
       const ok = await purchaseCharacter(ch.id, price);
       if (!ok) setMsg("Not enough coins.");
-      else setMsg(`Purchased ${ch.displayName}.`);
-    } catch (e) {
-      setMsg(e?.message || "Purchase failed.");
-    } finally {
-      setBusyId("");
+      else setMsg(`${ch.displayName} purchased.`);
+    } catch {
+      setMsg("Purchase failed.");
     }
+
+    setBusyId("");
   };
 
   const doEquip = async (ch) => {
     if (!username) {
-      setMsg("You must be logged in to equip characters.");
+      setMsg("You must be logged in to equip.");
       return;
     }
+    if (typeof equipCharacter !== "function") {
+      setMsg("Shop functions not wired yet (equipCharacter missing).");
+      return;
+    }
+
     setMsg("");
     setBusyId(ch.id);
+
     try {
       await equipCharacter(ch.id);
       setMsg(`${ch.displayName} equipped.`);
-    } catch (e) {
-      setMsg(e?.message || "Equip failed.");
-    } finally {
-      setBusyId("");
+    } catch {
+      setMsg("Equip failed.");
     }
+
+    setBusyId("");
   };
 
   return (
     <div className="shopRoot">
-      {/* Background arena image (random per entry) */}
       <img className="shopBg" src={arenaBg} alt="" draggable="false" />
-      <div className="shopBgShade" />
 
       <div className="shopStage">
-        {/* MENU button (top-left) */}
-        <button className="shopBackBtn" onClick={onBackToMenu} type="button">
-          <img className="shopBtnImg" src={BTN_MENU} alt="Menu" draggable="false" />
+        <button className="shopBackBtn shopImgBtn glowBtn" onClick={onBackToMenu} type="button">
+          <img src={BTN_MENU} alt="Menu" draggable="false" />
         </button>
 
-        {/* Shop icon placeholder (top-middle) */}
+        {/* Shop icon (PNG) */}
         <div className="shopTitleIcon">
-          <div className="shopIconPlaceholder">SHOP ICON</div>
+          <img className="shopIconImg" src={SHOP_ICON} alt="Shop" draggable="false" />
         </div>
 
-        {/* Coins display (top-right) */}
         <div className="shopCoins">
           <div className="shopCoinsRow">
             <img className="shopCoinIcon" src={COIN_ICON} alt="Coin" draggable="false" />
@@ -116,17 +123,13 @@ export default function Shop({ onBackToMenu }) {
           </div>
         </div>
 
-        {/* Scroll/Paper container (content is clipped INSIDE, no overflow outside) */}
         <div className="shopPaper">
-          {/* MANUAL: Replace this placeholder with your scroll PNG image later
-              - Put your scroll image at: client/public/assets/ui/shop_scroll.png (example)
-              - Then change the src below to that path. */}
-          <div className="shopPaperFrame">
-            {/* <img className="shopPaperImg" src="/assets/ui/shop_scroll.png" alt="" draggable="false" /> */}
-          </div>
+          {/* Blur layer behind scroll only */}
+          <div className="shopPaperBlur" aria-hidden="true" />
 
-          {/* Everything below is forced to stay inside the scroll area */}
-          <div className="shopPaperContent">
+          <img className="shopScrollImg" src={SCROLL_IMG} alt="" draggable="false" />
+
+          <div className="paperMask">
             <div className="paperHeader">
               <div className="paperHeaderTitle">Characters</div>
               {msg ? <div className="paperMsg">{msg}</div> : <div className="paperMsg muted"> </div>}
@@ -137,7 +140,6 @@ export default function Shop({ onBackToMenu }) {
                 const isOwned = owned.has(ch.id);
                 const isEquipped = equipped === ch.id;
                 const price = PRICES[ch.id] ?? 0;
-
                 const imgSrc = `/assets/characters/${ch.folderName}/front.png`;
 
                 return (
@@ -172,27 +174,23 @@ export default function Shop({ onBackToMenu }) {
                       <div className="shopActions">
                         {!isOwned ? (
                           <button
-                            className="shopActionBtn"
+                            className="shopImgBtn glowBtn"
+                            type="button"
                             disabled={busyId === ch.id}
                             onClick={() => doBuy(ch)}
-                            type="button"
                           >
-                            <img className="shopBtnImg" src={BTN_PURCHASE} alt="Purchase" draggable="false" />
+                            <img src={BTN_PURCHASE} alt="Purchase" draggable="false" />
                           </button>
                         ) : (
                           <button
-                            className="shopActionBtn"
+                            className="shopImgBtn glowBtn"
+                            type="button"
                             disabled={busyId === ch.id || isEquipped}
                             onClick={() => doEquip(ch)}
-                            type="button"
                           >
-                            <img className="shopBtnImg" src={BTN_EQUIP} alt="Equip" draggable="false" />
+                            <img src={BTN_EQUIP} alt="Equip" draggable="false" />
                           </button>
                         )}
-                      </div>
-
-                      <div className="manualNote">
-                        
                       </div>
                     </div>
                   </div>
@@ -200,9 +198,7 @@ export default function Shop({ onBackToMenu }) {
               })}
             </div>
 
-            <div className="paperFooter">
-              Add more characters by adding entries to <b>CHARACTERS</b> in <b>db/characters.js</b>
-            </div>
+            <div className="paperFooter">Characters save automatically.</div>
           </div>
         </div>
       </div>

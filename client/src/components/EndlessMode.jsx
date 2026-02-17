@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./endless.css";
 import { seedQuestionsIfNeeded, getRandomQuestion } from "../db/questionsDb";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { getCharacterById } from "../db/characters";
+import { CHARACTERS, DEFAULT_CHARACTER_ID } from "../db/characters";
 
 const UI = {
   ENEMY_BAR: "/assets/ui/enemy_bar.png",
@@ -47,9 +47,14 @@ function normalizeKey(raw) {
   return null;
 }
 
+function safeLower(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
 export default function EndlessMode({ onBackToMenu }) {
   const { username, profile, addCoins } = useAuth();
 
+  // Manual: increase for faster kills
   const HERO_DAMAGE = 25;
 
   const [scale, setScale] = useState(1);
@@ -65,10 +70,11 @@ export default function EndlessMode({ onBackToMenu }) {
     [scale]
   );
 
-  // FIX: folderName handles your capitalized character folders
-  const equippedId = String(profile?.equippedCharacter || "knight").toLowerCase();
-  const equippedChar = getCharacterById(equippedId);
+  // FIX: map equipped id -> folderName (TitleCase folders)
+  const equippedId = safeLower(profile?.equippedCharacter || DEFAULT_CHARACTER_ID);
+  const equippedChar = CHARACTERS.find((c) => safeLower(c.id) === equippedId) || CHARACTERS[0];
   const heroBack = `/assets/characters/${equippedChar.folderName}/back.png`;
+  const equippedLabel = equippedChar.id;
 
   const makeEnemy = () => {
     const e = pick(ENEMIES);
@@ -181,6 +187,7 @@ export default function EndlessMode({ onBackToMenu }) {
   }, []);
 
   const nextQuestion = async () => setQuestion(await getRandomQuestion());
+
   const rollCoinDrop = () => (Math.random() < 0.35 ? randInt(1, 7) : 0);
 
   const prevCoinsRef = useRef(0);
@@ -197,7 +204,6 @@ export default function EndlessMode({ onBackToMenu }) {
     playCoinSfx();
 
     const id = coinIdRef.current++;
-
     const startX = 1180;
     const startY = 360;
 
@@ -209,7 +215,7 @@ export default function EndlessMode({ onBackToMenu }) {
 
     setTimeout(() => {
       setCoinDrops((d) => d.filter((c) => c.id !== id));
-    }, 2200);
+    }, 2600);
 
     setCoinPop({ id: `pop-${id}`, amount });
     setTimeout(() => setCoinPop(null), 1100);
@@ -228,6 +234,7 @@ export default function EndlessMode({ onBackToMenu }) {
     prevCoinsRef.current = 0;
     setCoinDrops([]);
     setCoinPop(null);
+
     stopMusicHard();
   };
 
@@ -397,7 +404,7 @@ export default function EndlessMode({ onBackToMenu }) {
 
         <div className="bar heroBar">
           <img className="barFrame" src={UI.HERO_BAR} alt="" draggable="false" />
-          <div className="barName">{equippedChar.id}</div>
+          <div className="barName">{equippedLabel}</div>
           <div className="barFill" style={{ transform: `scaleX(${heroPct})` }} />
         </div>
 

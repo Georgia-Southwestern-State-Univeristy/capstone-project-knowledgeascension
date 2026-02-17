@@ -144,7 +144,7 @@ export default function MainMenu({ onStartEndless, onOpenShop }) {
 
         <img className="menuTitle" src="/assets/menu/title.png" alt="Knowledge Ascension" draggable="false" />
 
-        {/* FIXED: SHOP now navigates */}
+        {/* FIX: Shop button now navigates */}
         <button className="imgBtn shopBtn" onClick={() => onOpenShop?.()}>
           <Btn imgSrc="/assets/menu/btn_shop.png" alt="Shop" />
         </button>

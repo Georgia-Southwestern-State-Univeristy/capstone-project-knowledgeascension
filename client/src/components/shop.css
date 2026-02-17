@@ -1,341 +1,421 @@
+.shopRoot, .shopRoot * { box-sizing: border-box; }
+
 .shopRoot{
-  position:fixed;
-  inset:0;
-  overflow:hidden;
-  background:#000;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
 }
 
-/* Random arena background */
+
+:root{
+  /* Background */
+  --shopBgDim: 0.00;          /* Manual: 0.00 - 0.25 optional dim */
+
+  /* Top UI placement */
+  --menuBtnLeft: 40px;        /* Manual: Menu button X */
+  --menuBtnTop: 24px;         /* Manual: Menu button Y */
+  --menuBtnWidth: 150px;      /* Manual: Menu button PNG width */
+
+  --shopIconTop: 22px;        /* Manual: SHOP ICON box Y */
+  --shopIconW: 520px;         /* Manual: SHOP ICON box width */
+  --shopIconH: 150px;         /* Manual: SHOP ICON box height */
+
+  --coinsRight: 44px;         /* Manual: coins block X (from right) */
+  --coinsTop: 22px;           /* Manual: coins block Y */
+  --coinsFont: 34px;          /* Manual: coin number font size */
+  --coinIconSize: 48px;       /* Manual: coin icon size */
+
+  /* Scroll box placement/size */
+  --scrollW: min(1600px, 100vw); /* Manual: scroll overall width */
+  --scrollH: min(1000px, 85vh);  /* Manual: scroll overall height */
+  --scrollTop: 52%;             /* Manual: scroll center Y */
+  --scrollLeft: 50%;            /* Manual: scroll center X */
+
+  /* Scroll inner mask (push content inward) */
+  --maskLeft: 21%;            /* Manual: move content inward from left edge of scroll */
+  --maskRight: 20%;           /* Manual: move content inward from right edge */
+  --maskTop: 14%;             /* Manual: move content downward from top edge */
+  --maskBottom: 14%;          /* Manual: move content upward from bottom edge */
+
+  /* Row layout sizing */
+  --rowSpriteCol: 50px;      /* Manual: sprite column width */
+  --spriteImgW: 200px;        /* Manual: character sprite display width */
+
+  --nameFont: 30px;           /* Manual: character name font size */
+  --metaFont: 18px;           /* Manual: Price/labels font size */
+
+  --actionBtnW: 350px;        /* Manual: Purchase/Equip button PNG width */
+
+  /* Spacing */
+  --rowPadY: 18px;            /* Manual: row vertical padding */
+  --rowGap: 18px;             /* Manual: gap between sprite and info */
+}
+
+/* ---------------------------
+   Background
+---------------------------- */
 .shopBg{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  z-index:0;
-  user-select:none;
-  -webkit-user-drag:none;
-}
-
-/* Darken/contrast for readability */
-.shopBgShade{
-  position:absolute;
-  inset:0;
-  z-index:1;
-  background:
-    radial-gradient(circle at 35% 40%, rgba(0,0,0,0.25), rgba(0,0,0,0.70) 70%),
-    linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.55));
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  filter: brightness(calc(1 - var(--shopBgDim)));
 }
 
 .shopStage{
-  position:relative;
-  z-index:2;
-  width:100%;
-  height:100%;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
 }
 
-/* Top-left Menu button */
+/* ---------------------------
+   Top UI
+---------------------------- */
 .shopBackBtn{
-  position:absolute;
-  left:20px;
-  top:20px;
-  border:none;
-  background:transparent;
-  cursor:pointer;
-  padding:0;
+  position: absolute;
+  left: var(--menuBtnLeft);
+  top: var(--menuBtnTop);
+  z-index: 25;
 }
 
-/* Shared image button styling */
-.shopBtnImg{
-  width:240px;   /* MANUAL: button size */
-  height:auto;
-  image-rendering:pixelated;
-  user-select:none;
-  -webkit-user-drag:none;
-}
-
-/* Shop icon placeholder (top-middle) */
 .shopTitleIcon{
-  position:absolute;
-  top:18px;
-  left:50%;
-  transform:translateX(-50%);
+  position: absolute;
+  left: 50%;
+  top: var(--shopIconTop);
+  transform: translateX(-50%);
+  z-index: 25;
 }
 
-.shopIconPlaceholder{
-  width:240px;   /* MANUAL */
-  height:90px;   /* MANUAL */
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-  border:2px dashed rgba(255,255,255,0.35);
-  background:rgba(0,0,0,0.25);
-  border-radius:12px;
-  user-select:none;
+.shopIconImg{
+  width: var(--shopIconW);
+  height: var(--shopIconH);
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 
-/* Coins display (top-right) */
 .shopCoins{
-  position:absolute;
-  right:20px;
-  top:20px;
-  color:#fff;
-  text-shadow:0 2px 8px rgba(0,0,0,0.85);
-  user-select:none;
+  position: absolute;
+  right: var(--coinsRight);
+  top: var(--coinsTop);
+  z-index: 25;
+  text-align: right;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.85);
 }
 
 .shopCoinsRow{
-  display:flex;
-  align-items:center;
-  gap:10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--coinsFont);
+  font-weight: 900;
 }
 
 .shopCoinIcon{
-  width:64px;   /* MANUAL */
-  height:64px;  /* MANUAL */
-  image-rendering:pixelated;
-  user-select:none;
-  -webkit-user-drag:none;
+  width: var(--coinIconSize);
+  height: var(--coinIconSize);
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .shopCoinsValue{
-  font-size:28px;
-  font-weight:800;
+  min-width: 40px;
 }
 
 .shopAccountHint{
-  margin-top:6px;
-  font-size:14px;
-  opacity:0.9;
+  margin-top: 6px;
+  font-size: 16px;
+  opacity: 0.9;
 }
 
-/* -------------------------------------------------------
-   Scroll / Paper Container
-   IMPORTANT: Everything is clipped INSIDE this box.
--------------------------------------------------------- */
+/* ---------------------------
+   Scroll container
+---------------------------- */
 .shopPaper{
-  position:absolute;
-  left:50%;
-  top:140px;
-  transform:translateX(-50%);
-  width:1100px;   /* MANUAL: scroll box width */
-  height:820px;   /* MANUAL: scroll box height */
-  border-radius:18px;
-
-  /* Critical: prevents any child from clipping outside */
-  overflow:hidden;
-
-  /* Placeholder "scroll look" until you drop in a PNG */
-  background:rgba(0,0,0,0.35);
-  border:1px solid rgba(255,255,255,0.20);
-  box-shadow:0 14px 50px rgba(0,0,0,0.65);
+  position: absolute;
+  left: var(--scrollLeft);
+  top: var(--scrollTop);
+  transform: translate(-50%, -50%);
+  width: var(--scrollW);
+  height: var(--scrollH);
+  z-index: 10;
 }
 
-/* Frame layer for your future scroll PNG */
-.shopPaperFrame{
-  position:absolute;
-  inset:0;
-  z-index:0;
 
-  /* Nice faux parchment edge while you wait for PNG */
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), rgba(0,0,0,0.00) 50%),
-    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08), rgba(0,0,0,0.00) 55%),
-    linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(0,0,0,0.00)),
-    rgba(0,0,0,0.10);
+.shopPaperBlur{
+  position: absolute;
+  inset: 0;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 0.116);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  z-index: -1;
+  pointer-events: none;
+  transform: translateY(-20%);
+  height: 200%;
 }
 
-/* If you enable the image, it will fill the box */
-.shopPaperImg{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  user-select:none;
-  -webkit-user-drag:none;
+.shopScrollImg{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  z-index: 0;
 }
 
-/* Content layer that must stay INSIDE the scroll */
-.shopPaperContent{
-  position:absolute;
-  inset:0;
-  z-index:1;
-
-  /* MANUAL: adjust padding to match your scroll PNG safe area */
-  padding:22px 22px 18px 22px;
-
-  /* extra safety */
-  overflow:hidden;
+/* Mask keeps everything INSIDE the parchment area */
+.paperMask{
+  position: absolute;
+  left: var(--maskLeft);
+  right: var(--maskRight);
+  top: var(--maskTop);
+  bottom: var(--maskBottom);
+  z-index: 2;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
+/* ---------------------------
+   Header / Footer inside scroll
+---------------------------- */
 .paperHeader{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:12px;
+  padding: 14px 12px 8px 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .paperHeaderTitle{
-  font-size:28px;
-  font-weight:900;
-  color:#fff;
-  text-shadow:0 2px 10px rgba(0,0,0,0.65);
+  font-size: 46px;
+  font-weight: 900;
+  color: #2b1a0a;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.16);
 }
 
 .paperMsg{
-  color:#ffd86b;
-  font-weight:700;
-  min-height:24px;
-  text-shadow:0 2px 8px rgba(0,0,0,0.65);
+  font-size: 16px;
+  font-weight: 800;
+  color: #2b1a0a;
+  opacity: 0.95;
+  text-align: right;
 }
 
 .paperMsg.muted{
-  opacity:0.35;
-}
-
-/* Scroll area stays within the scroll image safe area */
-.paperScroll{
-  height:690px; /* MANUAL: keep inside scroll safe area */
-  overflow:auto;
-  padding-right:10px;
-
-  /* Critical: prevents scrollbar/content from spilling out visually */
-  box-sizing:border-box;
-}
-
-.shopRow{
-  display:flex;
-  gap:18px;
-  padding:14px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.14);
-  margin-bottom:14px;
-
-  /* Ensures wide content never escapes the row */
-  max-width:100%;
-  box-sizing:border-box;
-}
-
-.shopCharPreview{
-  width:180px; /* MANUAL */
-  height:180px; /* MANUAL */
-  flex:0 0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,0.25);
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,0.10);
-  overflow:hidden; /* keep character image clipped in its box */
-}
-
-.shopCharPreview img{
-  max-width:160px; /* MANUAL */
-  max-height:160px; /* MANUAL */
-  image-rendering:pixelated;
-  user-select:none;
-  -webkit-user-drag:none;
-}
-
-.shopCharInfo{
-  flex:1;
-  min-width:0; /* IMPORTANT: prevents flex overflow clipping outside paper */
-  color:#fff;
-}
-
-.shopCharName{
-  font-size:22px;
-  font-weight:900;
-  margin-bottom:10px;
-  text-shadow:0 2px 10px rgba(0,0,0,0.55);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.shopCharMeta{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-  margin-bottom:12px;
-  min-width:0;
-}
-
-.shopPrice{
-  white-space:nowrap;
-}
-
-.shopPriceWithCoin{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  margin-left:8px;
-}
-
-.shopCoinTiny{
-  width:28px;  /* MANUAL */
-  height:28px; /* MANUAL */
-  image-rendering:pixelated;
-  user-select:none;
-  -webkit-user-drag:none;
-}
-
-.tag{
-  padding:6px 10px;
-  border-radius:999px;
-  font-weight:800;
-  font-size:12px;
-  border:1px solid rgba(255,255,255,0.22);
-  white-space:nowrap;
-}
-
-.tag.equipped{ background:rgba(80, 200, 120, 0.18); }
-.tag.owned{ background:rgba(120, 160, 255, 0.18); }
-.tag.locked{ background:rgba(255, 120, 120, 0.18); }
-
-.shopActions{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  flex-wrap:wrap;
-
-  /* keeps buttons from pushing outside the paper */
-  max-width:100%;
-}
-
-.shopActionBtn{
-  border:none;
-  background:transparent;
-  padding:0;
-  cursor:pointer;
-}
-
-.shopActionBtn:disabled{
-  opacity:0.6;
-  cursor:default;
-}
-
-.manualNote{
-  margin-top:8px;
-  font-size:12px;
-  opacity:0.75;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  opacity: 0.0;
 }
 
 .paperFooter{
-  margin-top:10px;
-  color:#fff;
-  opacity:0.85;
-  font-size:13px;
-  text-shadow:0 2px 8px rgba(0,0,0,0.55);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  padding: 10px 12px 14px 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(43,26,10,0.65);
+  text-align: center;
+}
+
+/* ---------------------------
+   Scroll list area
+---------------------------- */
+.paperScroll{
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 12px 0 12px;
+}
+
+.paperScroll::-webkit-scrollbar{ width: 12px; }
+.paperScroll::-webkit-scrollbar-thumb{
+  background: rgba(60,30,10,0.25);
+  border-radius: 999px;
+}
+.paperScroll::-webkit-scrollbar-track{
+  background: rgba(255,255,255,0.10);
+  border-radius: 999px;
+}
+
+/* ---------------------------
+   Character rows
+---------------------------- */
+.shopRow{
+  display: grid;
+  grid-template-columns: var(--rowSpriteCol) 1fr;
+  gap: var(--rowGap);
+  align-items: center;
+  padding: var(--rowPadY) 6px;
+  border-top: 1px solid rgba(43,26,10,0.14);
+}
+
+.shopRow:first-child{
+  border-top: none;
+}
+
+.shopCharPreview{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.shopCharPreview img{
+  width: var(--spriteImgW);
+  height: auto;
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.shopCharInfo{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 10px 16px;
+  align-items: center;
+}
+
+.shopCharName{
+  font-size: var(--nameFont);
+  font-weight: 900;
+  color: #2b1a0a;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.10);
+}
+
+.shopCharMeta{
+  grid-column: 1 / 2;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  color: #2b1a0a;
+  font-size: var(--metaFont);
+  font-weight: 800;
+}
+
+.shopPriceWithCoin{
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.26);
+  border: 1px solid rgba(43,26,10,0.12);
+}
+
+.shopCoinTiny{
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* status tags */
+.tag{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+  user-select: none;
+}
+
+.tag.locked{
+  background: rgba(120, 20, 20, 0.75);
+  color: #fff;
+}
+.tag.owned{
+  background: rgba(20, 90, 40, 0.75);
+  color: #fff;
+}
+.tag.equipped{
+  background: rgba(100, 70, 10, 0.75);
+  color: #fff;
+}
+
+/* ---------------------------
+   PNG buttons (no invisible hitboxes)
+---------------------------- */
+.shopActions{
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shopImgBtn{
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.shopImgBtn img{
+  display: block;
+  width: var(--actionBtnW);
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* Menu button uses same base class; set width separately */
+.shopBackBtn.shopImgBtn img{
+  width: var(--menuBtnWidth);
+}
+
+/* Glow + scale */
+.glowBtn{
+  position: relative;
+  transform: translateZ(0);
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.glowBtn::before{
+  content: "";
+  position: absolute;
+  inset: -18px;
+  border-radius: 22px;
+  background: radial-gradient(circle, rgba(255,215,120,0.38), rgba(255,215,120,0.00) 62%);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+  pointer-events: none;
+}
+
+.glowBtn:hover{
+  transform: scale(1.06);
+  filter: brightness(1.05);
+}
+
+.glowBtn:hover::before{
+  opacity: 1;
+}
+
+.shopImgBtn:disabled{
+  opacity: 0.65;
+  cursor: default;
+}
+
+.shopImgBtn:disabled:hover{
+  transform: none;
+  filter: none;
 }

@@ -4,19 +4,20 @@ import EndlessMode from "./components/EndlessMode.jsx";
 import Shop from "./components/Shop.jsx";
 
 export default function App() {
-  const [page, setPage] = useState("menu");
+  const [screen, setScreen] = useState("menu"); // "menu" | "endless" | "shop"
 
-  const goMenu = () => setPage("menu");
-  const goShop = () => setPage("shop");
-  const goEndless = () => setPage("endless");
-
-  if (page === "shop") {
-    return <Shop onBackToMenu={goMenu} />;
+  if (screen === "endless") {
+    return <EndlessMode onBackToMenu={() => setScreen("menu")} />;
   }
 
-  if (page === "endless") {
-    return <EndlessMode onBackToMenu={goMenu} />;
+  if (screen === "shop") {
+    return <Shop onBackToMenu={() => setScreen("menu")} />;
   }
 
-  return <MainMenu onStartEndless={goEndless} onOpenShop={goShop} />;
+  return (
+    <MainMenu
+      onStartEndless={() => setScreen("endless")}
+      onOpenShop={() => setScreen("shop")}
+    />
+  );
 }
