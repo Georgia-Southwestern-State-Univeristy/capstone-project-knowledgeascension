@@ -1,0 +1,275 @@
+/* Manual tuning area (positions/sizes)
+   - Keep these as your main tweak knobs.
+*/
+:root{
+  --coopExitLeft: 24px;
+  --coopExitTop: 18px;
+
+  --bossX: 50%;
+  --bossY: 30%;
+  --bossW: 420px;
+
+  --playersX: 50%;
+  --playersY: 56%;
+  --playerSpriteW: 110px;
+  --playerGap: 18px;
+
+  --qBoxX: 50%;
+  --qBoxY: 72%;
+  --qBoxW: min(1100px, 95vw);
+
+  --topBarsX: 50%;
+  --topBarsY: 18px;
+  --topBarsW: min(820px, 92vw);
+}
+
+.coopRoot{
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.coopBg{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.coopStage{
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.coopExit{
+  position: absolute;
+  left: var(--coopExitLeft);
+  top: var(--coopExitTop);
+  z-index: 20;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  cursor: pointer;
+}
+
+.coopTopBars{
+  position: absolute;
+  left: var(--topBarsX);
+  top: var(--topBarsY);
+  transform: translateX(-50%);
+  width: var(--topBarsW);
+  z-index: 15;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.barBlock{
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+}
+
+.barLabel{
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.barOuter{
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  overflow: hidden;
+}
+
+.barFill{
+  height: 100%;
+  background: rgba(255, 210, 120, 0.85);
+}
+
+.barValue{
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.bossWrap{
+  position: absolute;
+  left: var(--bossX);
+  top: var(--bossY);
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.bossSprite{
+  width: var(--bossW);
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 14px 30px rgba(0,0,0,0.50));
+}
+
+.playersRow{
+  position: absolute;
+  left: var(--playersX);
+  top: var(--playersY);
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  display: flex;
+  gap: var(--playerGap);
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.playerSlot{
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 130px;
+}
+
+.namePlate{
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: #fff;
+  text-align: center;
+  width: 100%;
+}
+
+.nm{
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hp{
+  margin-top: 4px;
+  font-weight: 900;
+  font-size: 12px;
+  opacity: 0.95;
+}
+.hp.dead{ color: rgba(255,180,180,0.95); }
+
+.playerSprite{
+  width: var(--playerSpriteW);
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.55));
+}
+
+.questionHud{
+  position: absolute;
+  left: var(--qBoxX);
+  top: var(--qBoxY);
+  transform: translate(-50%, -50%);
+  z-index: 12;
+  width: var(--qBoxW);
+}
+
+.qBox{
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.qContent{
+  position: absolute;
+  inset: 0;
+  padding: 26px 30px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+}
+
+.qText{
+  font-weight: 900;
+  color: #2b1a0a;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.10);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.ansGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ansBtn{
+  cursor: pointer;
+  border-radius: 14px;
+  border: 1px solid rgba(43,26,10,0.18);
+  background: rgba(255,255,255,0.35);
+  color: #2b1a0a;
+  font-weight: 900;
+  padding: 12px 12px;
+  text-align: left;
+}
+
+.ansBtn:hover{
+  filter: brightness(1.05);
+}
+
+.qCenter{
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #2b1a0a;
+}
+
+.qTitle{
+  font-weight: 900;
+  font-size: 22px;
+}
+.qSub{
+  margin-top: 8px;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+.deadOverlay{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.30);
+  border-radius: 18px;
+}
+
+.deadTitle{
+  color: #fff;
+  font-weight: 900;
+  font-size: 22px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+.deadSub{
+  margin-top: 6px;
+  color: rgba(255,255,255,0.90);
+  font-weight: 800;
+}
+.respawnBtn{
+  margin-top: 10px;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255, 210, 120, 0.25);
+  color: #fff;
+  font-weight: 900;
+}

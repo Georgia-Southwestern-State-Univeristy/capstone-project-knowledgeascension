@@ -3,7 +3,7 @@ import "./menu.css";
 import trackLobby from "../assets/audio/track_lobby.mp3";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function MainMenu({ onStartEndless, onOpenShop }) {
+export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop }) {
   const { loading, username, profile, signup, login, logout } = useAuth();
 
   const [selected, setSelected] = useState("1V1");
@@ -57,11 +57,12 @@ export default function MainMenu({ onStartEndless, onOpenShop }) {
       if (k === "arrowup" || k === "w") setSelected(cur => order[(order.indexOf(cur) - 1 + order.length) % order.length]);
       if (k === "enter") {
         if (selected === "ENDLESS") onStartEndless?.();
+        if (selected === "COOP") onOpenCoop?.();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, onStartEndless]);
+  }, [selected, onStartEndless, onOpenCoop]);
 
   const Btn = ({ imgSrc, alt }) => (
     <div className="btnWrap">
@@ -144,7 +145,6 @@ export default function MainMenu({ onStartEndless, onOpenShop }) {
 
         <img className="menuTitle" src="/assets/menu/title.png" alt="Knowledge Ascension" draggable="false" />
 
-        {/* FIX: Shop button now navigates */}
         <button className="imgBtn shopBtn" onClick={() => onOpenShop?.()}>
           <Btn imgSrc="/assets/menu/btn_shop.png" alt="Shop" />
         </button>
@@ -160,9 +160,9 @@ export default function MainMenu({ onStartEndless, onOpenShop }) {
         <button
           className={`imgBtn modeBtn btn2 ${selected === "COOP" ? "selected" : ""}`}
           onMouseEnter={() => setSelected("COOP")}
-          onClick={() => console.log("Co-op later")}
+          onClick={() => onOpenCoop?.()}
         >
-          <Btn imgSrc="/assets/menu/btn_coop.png" alt="Co-op" />
+          <Btn imgSrc="/assets/menu/btn_coop.png" alt="Co-op Boss" />
         </button>
 
         <button
