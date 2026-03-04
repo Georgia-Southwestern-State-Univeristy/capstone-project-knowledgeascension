@@ -1,16 +1,41 @@
-/* Manual: panel positioning targets your red/blue box areas */
+/* =========================================================
+   CO-OP LOBBY — Layout + Tuning
+   ---------------------------------------------------------
+   Use the :root variables as your main drag controls.
+   Left panel = upload area (red box)
+   Right panel = join/host/ready list (blue box)
+   ========================================================= */
+
+/* ------------------------------
+   MANUAL TUNING: Panel Geometry
+   ------------------------------ */
 :root{
+  /* Back button */
+  --coopBackLeft: 24px;
+  --coopBackTop: 18px;
+
+  /* Left panel (Host Upload / red area) */
   --coopLeftX: 5%;
   --coopLeftY: 22%;
   --coopLeftW: 40%;
   --coopLeftH: 64%;
 
+  /* Right panel (Room / blue area) */
   --coopRightX: 58%;
   --coopRightY: 22%;
   --coopRightW: 37%;
   --coopRightH: 64%;
+
+  /* Panel padding */
+  --panelPad: 18px;
+
+  /* Dropzone sizing */
+  --dropZoneH: calc(100% - 70px); /* room for title + footer text */
 }
 
+/* ------------------------------
+   Stage / Background
+   ------------------------------ */
 .coopLobbyRoot{
   position: fixed;
   inset: 0;
@@ -32,10 +57,13 @@
   height: 100%;
 }
 
+/* ------------------------------
+   Back Button
+   ------------------------------ */
 .coopBack{
   position: absolute;
-  left: 24px;
-  top: 18px;
+  left: var(--coopBackLeft);
+  top: var(--coopBackTop);
   z-index: 10;
   padding: 10px 14px;
   border-radius: 10px;
@@ -45,6 +73,9 @@
   cursor: pointer;
 }
 
+/* ------------------------------
+   Panels (left + right)
+   ------------------------------ */
 .coopLeftPanel, .coopRightPanel{
   position: absolute;
   border-radius: 18px;
@@ -53,7 +84,7 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-  padding: 18px 18px;
+  padding: var(--panelPad);
   color: #fff;
 }
 
@@ -73,6 +104,9 @@
   flex-direction: column;
 }
 
+/* ------------------------------
+   Typography / Titles
+   ------------------------------ */
 .panelTitle{
   font-size: 22px;
   font-weight: 900;
@@ -91,6 +125,9 @@
   font-size: 13px;
 }
 
+/* ------------------------------
+   Join/Host Tabs
+   ------------------------------ */
 .modeTabs{
   display: flex;
   gap: 10px;
@@ -109,6 +146,9 @@
   background: rgba(255,255,255,0.18);
 }
 
+/* ------------------------------
+   Form Rows
+   ------------------------------ */
 .row{
   display: grid;
   gap: 6px;
@@ -127,6 +167,9 @@
   outline: none;
 }
 
+/* ------------------------------
+   Buttons
+   ------------------------------ */
 .actions{
   display: flex;
   gap: 10px;
@@ -152,6 +195,9 @@
   cursor: default;
 }
 
+/* ------------------------------
+   Room + Players List
+   ------------------------------ */
 .roomCode{
   margin-top: 6px;
   opacity: 0.95;
@@ -190,6 +236,9 @@
   background: rgba(60,200,90,0.30);
 }
 
+/* ------------------------------
+   Bottom Actions (Ready/Start)
+   ------------------------------ */
 .bottomActions{
   display: flex;
   justify-content: space-between;
@@ -197,15 +246,20 @@
   margin-top: 10px;
 }
 
+/* ------------------------------
+   Error
+   ------------------------------ */
 .error{
   margin-top: 10px;
   color: #ffd2d2;
   font-weight: 800;
 }
 
-/* Dropzone */
+/* ------------------------------
+   Dropzone (Host Upload Area)
+   ------------------------------ */
 .dropZone{
-  height: calc(100% - 70px);
+  height: var(--dropZoneH);
   border-radius: 18px;
   border: 2px dashed rgba(255,255,255,0.30);
   background: rgba(0,0,0,0.20);
