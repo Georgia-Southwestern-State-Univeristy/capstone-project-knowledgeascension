@@ -11,7 +11,17 @@ import JSZip from "jszip";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const PORT = Number(process.env.PORT || 5175);
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_API_KEY = String(process.env.GEMINI_API_KEY || "").trim();
+
+/**
+ * Manual: set this in server/.env to override:
+ * GEMINI_MODEL=gemini-2.5-flash
+ *
+ * Notes:
+ * - gemini-2.0-flash is deprecated/not available to some new projects.
+ * - gemini-2.5-flash is the current Flash model commonly used for generateContent.
+ */
+const GEMINI_MODEL = String(process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
 
 const app = express();
 app.use(cors({ origin: true, credentials: false }));
@@ -22,7 +32,10 @@ const io = new Server(server, {
   cors: { origin: true, methods: ["GET", "POST"] },
 });
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+});
 
 /* --------------------------
    Room model (in-memory)
@@ -48,14 +61,14 @@ function roomPublic(room) {
     started: room.started,
     bossHp: room.bossHp,
     timerMs: room.timerMs,
-    players: room.players.map(p => ({
+    players: room.players.map((p) => ({
       id: p.id,
       name: p.name,
       ready: p.ready,
       hp: p.hp,
-      equipped: p.equipped
+      equipped: p.equipped,
     })),
-    questionCount: room.questions.length
+    questionCount: room.questions.length,
   };
 }
 
@@ -93,7 +106,7 @@ function endRoom(room, reason) {
 }
 
 function allDead(room) {
-  return room.players.every(p => p.hp <= 0);
+  return room.players.every((p) => p.hp <= 0);
 }
 
 /* --------------------------
@@ -119,12 +132,12 @@ io.on("connection", (socket) => {
           equipped: String(equipped || "knight").toLowerCase(),
           ready: false,
           hp: 100,
-          deadUntil: 0
-        }
+          deadUntil: 0,
+        },
       ],
       questions: [],
       qIndex: 0,
-      tick: null
+      tick: null,
     };
 
     rooms.set(code, room);
@@ -150,7 +163,7 @@ io.on("connection", (socket) => {
       equipped: String(equipped || "knight").toLowerCase(),
       ready: false,
       hp: 100,
-      deadUntil: 0
+      deadUntil: 0,
     });
 
     sendRoomState(room);
@@ -161,7 +174,7 @@ io.on("connection", (socket) => {
     const room = rooms.get(c);
     if (!room) return;
 
-    const p = room.players.find(x => x.id === socket.id);
+    const p = room.players.find((x) => x.id === socket.id);
     if (!p) return;
 
     p.ready = !!ready;
@@ -178,7 +191,7 @@ io.on("connection", (socket) => {
     if (room.players.length < 2) return roomError(socket, "Need at least 2 players.");
     if (!room.questions.length) return roomError(socket, "Upload a study file first (needs questions).");
 
-    const everyoneReady = room.players.every(p => p.ready);
+    const everyoneReady = room.players.every((p) => p.ready);
     if (!everyoneReady) return roomError(socket, "All players must be ready.");
 
     room.started = true;
@@ -245,9 +258,7 @@ io.on("connection", (socket) => {
     if (!normalized.length) return roomError(socket, "No valid questions detected.");
     room.questions.push(...normalized);
 
-    if (!room.started) {
-      room.qIndex = 0;
-    }
+    if (!room.started) room.qIndex = 0;
 
     sendRoomState(room);
   });
@@ -257,7 +268,7 @@ io.on("connection", (socket) => {
     const room = rooms.get(c);
     if (!room || !room.started || room.ended) return;
 
-    const player = room.players.find(p => p.id === socket.id);
+    const player = room.players.find((p) => p.id === socket.id);
     if (!player) return;
 
     if (player.hp <= 0) return;
@@ -272,20 +283,14 @@ io.on("connection", (socket) => {
     const correct = String(cur.correct || "").toLowerCase();
 
     if (pick === correct) {
-      const dmg = 10 + Math.floor(Math.random() * 51); // 10..60
+      const dmg = 10 + Math.floor(Math.random() * 51); // Manual: 10..60
       room.bossHp = Math.max(0, room.bossHp - dmg);
 
-      const coinDrop = 1; // Manual: adjust coin rules here
-      io.to(room.code).emit("coop:hit", {
-        playerId: socket.id,
-        damage: dmg,
-        coinDrop
-      });
+      const coinDrop = 1; // Manual: coin rules per correct answer
+      io.to(room.code).emit("coop:hit", { playerId: socket.id, damage: dmg, coinDrop });
     } else {
-      player.hp = Math.max(0, player.hp - 10);
-      if (player.hp === 0) {
-        player.deadUntil = Date.now() + 5000;
-      }
+      player.hp = Math.max(0, player.hp - 10); // Manual: wrong-answer penalty
+      if (player.hp === 0) player.deadUntil = Date.now() + 5000; // Manual: respawn delay
     }
 
     const next = pickNextQuestion(room);
@@ -302,21 +307,21 @@ io.on("connection", (socket) => {
     const room = rooms.get(c);
     if (!room || !room.started || room.ended) return;
 
-    const p = room.players.find(x => x.id === socket.id);
+    const p = room.players.find((x) => x.id === socket.id);
     if (!p) return;
 
     const now = Date.now();
     if (p.hp > 0) return;
     if (p.deadUntil && now < p.deadUntil) return;
 
-    p.hp = 100;
+    p.hp = 100; // Manual: respawn HP
     p.deadUntil = 0;
     sendRoomState(room);
   });
 
   socket.on("disconnect", () => {
     for (const room of rooms.values()) {
-      const idx = room.players.findIndex(p => p.id === socket.id);
+      const idx = room.players.findIndex((p) => p.id === socket.id);
       if (idx === -1) continue;
 
       const wasHost = idx === 0;
@@ -328,11 +333,8 @@ io.on("connection", (socket) => {
         continue;
       }
 
-      if (wasHost) {
-        endRoom(room, "host_left");
-      } else {
-        sendRoomState(room);
-      }
+      if (wasHost) endRoom(room, "host_left");
+      else sendRoomState(room);
     }
   });
 });
@@ -343,10 +345,7 @@ io.on("connection", (socket) => {
 app.post("/api/coop/upload", upload.single("file"), async (req, res) => {
   try {
     const code = String(req.body?.code || "").trim().toUpperCase();
-    if (!rooms.has(code)) {
-      return res.status(400).json({ error: "Room not found. Create the room first." });
-    }
-
+    if (!rooms.has(code)) return res.status(400).json({ error: "Room not found. Create the room first." });
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
 
     const ext = (req.file.originalname.split(".").pop() || "").toLowerCase();
@@ -359,10 +358,7 @@ app.post("/api/coop/upload", upload.single("file"), async (req, res) => {
     else return res.status(400).json({ error: "Unsupported file type. Use PDF/DOCX/PPTX." });
 
     text = cleanText(text);
-
-    if (text.length < 50) {
-      return res.status(400).json({ error: "Not enough readable text found in the file." });
-    }
+    if (text.length < 50) return res.status(400).json({ error: "Not enough readable text found in the file." });
 
     const questions = await generateQuestionsGemini(text);
     return res.json({ questions });
@@ -397,7 +393,7 @@ function cleanText(t) {
   return String(t || "")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 18000); // keep prompt size stable
+    .slice(0, 18000); // Manual: prompt cap
 }
 
 function normalizeQuestion(q) {
@@ -421,40 +417,65 @@ async function generateQuestionsGemini(text) {
   }
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  const prompt =
-    "Create a JSON array of multiple-choice questions from the study content below.\n" +
-    "Rules:\n" +
-    "- Each question must have exactly 4 answer choices.\n" +
-    "- Output ONLY valid JSON (no markdown, no extra text).\n" +
-    "- Each item format: {\"text\":\"...\",\"a\":\"...\",\"b\":\"...\",\"c\":\"...\",\"d\":\"...\",\"correct\":\"a|b|c|d\"}\n" +
-    "- Make 12 questions.\n\n" +
-    "STUDY CONTENT:\n" +
-    text;
+  // Manual: if Google changes availability again, update env GEMINI_MODEL first.
+  const preferred = GEMINI_MODEL;
 
-  const result = await model.generateContent(prompt);
-  const raw = result?.response?.text?.() || "";
+  // Fallbacks (keeps you unblocked if a model ID changes)
+  const candidates = [
+    preferred,
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-1.5-flash",
+  ].filter(Boolean);
 
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    // Try to salvage JSON if Gemini adds accidental text
-    const start = raw.indexOf("[");
-    const end = raw.lastIndexOf("]");
-    if (start === -1 || end === -1) throw new Error("Gemini did not return JSON.");
-    parsed = JSON.parse(raw.slice(start, end + 1));
+  let lastErr = null;
+
+  for (const modelName of candidates) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+
+      const prompt =
+        "Return ONLY a JSON array (no markdown, no extra text).\n" +
+        "Create 12 multiple-choice questions from the study content.\n" +
+        "Rules:\n" +
+        '- Each item format: {"text":"...","a":"...","b":"...","c":"...","d":"...","correct":"a|b|c|d"}\n' +
+        "- Exactly 4 answer choices.\n\n" +
+        "STUDY CONTENT:\n" +
+        text;
+
+      const result = await model.generateContent(prompt);
+      const raw = result?.response?.text?.() || "";
+
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        const start = raw.indexOf("[");
+        const end = raw.lastIndexOf("]");
+        if (start === -1 || end === -1) throw new Error("Gemini did not return JSON.");
+        parsed = JSON.parse(raw.slice(start, end + 1));
+      }
+
+      const out = [];
+      for (const q of Array.isArray(parsed) ? parsed : []) {
+        const n = normalizeQuestion(q);
+        if (n) out.push(n);
+      }
+
+      if (!out.length) throw new Error(`Model ${modelName} returned no valid questions.`);
+      return out;
+    } catch (e) {
+      lastErr = e;
+    }
   }
 
-  const out = [];
-  for (const q of Array.isArray(parsed) ? parsed : []) {
-    const n = normalizeQuestion(q);
-    if (n) out.push(n);
-  }
-  return out;
+  throw new Error(
+    lastErr?.message ||
+      "Gemini request failed. Verify the API key is a Google AI Studio Gemini API key and update GEMINI_MODEL."
+  );
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Co-op server running on http://localhost:${PORT}`);
 });

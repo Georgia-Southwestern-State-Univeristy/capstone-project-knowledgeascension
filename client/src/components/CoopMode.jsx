@@ -1,13 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+// client/src/components/CoopMode.jsx
+import React, { useEffect, useRef, useState } from "react";
 import "./coop.css";
-import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { CHARACTERS } from "../db/characters";
-
-function getCoopServerBase() {
-  const host = window.location.hostname;
-  return `http://${host}:5175`;
-}
+import { getCoopSocket, disconnectCoopSocket } from "../db/coopSocket.js";
 
 function folderForEquippedId(id) {
   const key = String(id || "knight").toLowerCase();
@@ -25,46 +21,58 @@ export default function CoopMode({ room, onBackToMenu }) {
   const [localDeadUntil, setLocalDeadUntil] = useState(0);
 
   const socketRef = useRef(null);
-  const apiBase = useMemo(() => getCoopServerBase(), []);
-
   const roomCode = String(room?.code || "").toUpperCase();
 
   useEffect(() => {
     if (!roomCode) return;
 
-    const s = io(apiBase, { transports: ["websocket"] });
+    const s = getCoopSocket();
     socketRef.current = s;
 
-    s.on("connect", () => setSocketId(s.id));
-
-    s.on("coop:room_state", (st) => setState(st));
-    s.on("coop:question", (payload) => setQ(payload?.q || null));
-    s.on("coop:started", (st) => {
+    const onConnect = () => setSocketId(s.id);
+    const onRoomState = (st) => setState(st);
+    const onQuestion = (payload) => setQ(payload?.q || null);
+    const onStarted = (st) => {
       setEndReason("");
       setState(st);
-      setQ(st?.curQuestion || null);
-    });
+      // server separately emits coop:question; we don’t depend on st.curQuestion
+    };
 
-    s.on("coop:hit", async (payload) => {
+    const onHit = async (payload) => {
       if (!payload) return;
       if (payload.playerId === s.id && payload.coinDrop > 0) {
         try { await addCoins(payload.coinDrop); } catch {}
       }
-    });
+    };
 
-    s.on("coop:ended", (payload) => {
+    const onEnded = (payload) => {
       setEndReason(String(payload?.reason || "ended"));
-    });
+    };
+
+    s.on("connect", onConnect);
+    s.on("coop:room_state", onRoomState);
+    s.on("coop:question", onQuestion);
+    s.on("coop:started", onStarted);
+    s.on("coop:hit", onHit);
+    s.on("coop:ended", onEnded);
+
+    if (s.connected) onConnect();
 
     return () => {
-      try { s.disconnect(); } catch {}
+      s.off("connect", onConnect);
+      s.off("coop:room_state", onRoomState);
+      s.off("coop:question", onQuestion);
+      s.off("coop:started", onStarted);
+      s.off("coop:hit", onHit);
+      s.off("coop:ended", onEnded);
       socketRef.current = null;
     };
-  }, [apiBase, roomCode, addCoins]);
+  }, [roomCode, addCoins]);
 
   const me = state?.players?.find((p) => p.id === socketId);
   const bossHp = Number(state?.bossHp || 0);
   const bossHpMax = 5000;
+
   const timerMs = Number(state?.timerMs || 0);
   const timerMax = 5 * 60 * 1000;
 
@@ -72,12 +80,8 @@ export default function CoopMode({ room, onBackToMenu }) {
 
   useEffect(() => {
     if (!me) return;
-    if (me.hp <= 0) {
-      const until = Date.now() + 5000;
-      setLocalDeadUntil(until);
-    } else {
-      setLocalDeadUntil(0);
-    }
+    if (me.hp <= 0) setLocalDeadUntil(Date.now() + 5000);
+    else setLocalDeadUntil(0);
   }, [me?.hp]);
 
   const sendAnswer = (picked) => {
@@ -93,11 +97,17 @@ export default function CoopMode({ room, onBackToMenu }) {
   const remaining = Math.max(0, localDeadUntil - Date.now());
   const respawnReady = me?.hp <= 0 && remaining <= 0;
 
+  const exit = () => {
+    // leaving co-op entirely
+    disconnectCoopSocket();
+    onBackToMenu?.();
+  };
+
   return (
     <div className="coopRoot">
       <img className="coopBg" src="/assets/arenas/boss_stage.png" alt="Boss Arena" draggable="false" />
       <div className="coopStage">
-        <button className="coopExit" onClick={onBackToMenu}>Main Menu</button>
+        <button className="coopExit" onClick={exit}>Main Menu</button>
 
         {/* Manual: UI placement vars are in coop.css */}
         <div className="coopTopBars">

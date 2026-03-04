@@ -1,13 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+// client/src/components/CoopLobby.jsx
+import React, { useEffect, useRef, useState } from "react";
 import "./coopLobby.css";
-import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
-
-function getCoopServerBase() {
-  // Manual: if you hardcode later, change this.
-  const host = window.location.hostname;
-  return `http://${host}:5175`;
-}
+import { getCoopSocket, disconnectCoopSocket } from "../db/coopSocket.js";
 
 export default function CoopLobby({ onBackToMenu, onEnterGame }) {
   const { username, profile } = useAuth();
@@ -22,58 +17,68 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
   const [connected, setConnected] = useState(false);
 
   const socketRef = useRef(null);
+  const navigatingToGameRef = useRef(false);
 
   const equipped = String(profile?.equippedCharacter || "knight").toLowerCase();
-  const apiBase = useMemo(() => getCoopServerBase(), []);
 
   useEffect(() => {
     setErr("");
 
-    const s = io(apiBase, {
-      transports: ["websocket", "polling"], // important
-      timeout: 8000,
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 500,
-    });
-
+    const s = getCoopSocket();
     socketRef.current = s;
 
-    s.on("connect", () => {
+    const onConnect = () => {
       setConnected(true);
       setSocketId(s.id);
       setErr("");
-    });
+    };
 
-    s.on("disconnect", () => {
+    const onDisconnect = () => setConnected(false);
+
+    const onConnectError = () => {
       setConnected(false);
-    });
+      setErr("Server connection failed. Start the server on port 5175.");
+    };
 
-    s.on("connect_error", (e) => {
-      setConnected(false);
-      setErr(`Server connection failed (${apiBase}). Start the server on port 5175.`);
-    });
+    const onRoomError = (e) => setErr(e?.message || "Error");
 
-    s.on("coop:error", (e) => setErr(e?.message || "Error"));
-
-    s.on("coop:room_state", (state) => {
+    const onRoomState = (state) => {
       setRoom(state);
       setErr("");
-    });
+    };
 
-    s.on("coop:started", (state) => {
+    const onStarted = (state) => {
       setRoom(state);
+      navigatingToGameRef.current = true;
       onEnterGame?.({
         code: state.code,
         isHost: state.players?.[0]?.id === s.id,
       });
-    });
+    };
+
+    s.on("connect", onConnect);
+    s.on("disconnect", onDisconnect);
+    s.on("connect_error", onConnectError);
+
+    s.on("coop:error", onRoomError);
+    s.on("coop:room_state", onRoomState);
+    s.on("coop:started", onStarted);
+
+    if (s.connected) onConnect();
 
     return () => {
-      try { s.disconnect(); } catch {}
+      // IMPORTANT: do not disconnect when moving to game
+      s.off("connect", onConnect);
+      s.off("disconnect", onDisconnect);
+      s.off("connect_error", onConnectError);
+
+      s.off("coop:error", onRoomError);
+      s.off("coop:room_state", onRoomState);
+      s.off("coop:started", onStarted);
+
       socketRef.current = null;
     };
-  }, [apiBase, onEnterGame]);
+  }, [onEnterGame]);
 
   const isHost = !!room && room.players?.[0]?.id === socketId;
   const me = room?.players?.find((p) => p.id === socketId);
@@ -112,8 +117,12 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
         fd.append("file", f);
         fd.append("code", room.code);
 
+        // NOTE: use same base as socket (host/lan-safe)
+        const host = window.location.hostname;
+        const apiBase = `http://${host}:5175`;
+
         const res = await fetch(`${apiBase}/api/coop/upload`, { method: "POST", body: fd });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || "Upload failed.");
 
         const questions = Array.isArray(data?.questions) ? data.questions : [];
@@ -128,12 +137,18 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
     }
   };
 
+  const back = () => {
+    navigatingToGameRef.current = false;
+    disconnectCoopSocket(); // leaving co-op entirely
+    onBackToMenu?.();
+  };
+
   return (
     <div className="coopLobbyRoot">
       <video className="coopLobbyBg" src="/assets/menu/bg.mp4" autoPlay loop muted playsInline />
 
       <div className="coopLobbyHud">
-        <button className="coopBack" onClick={onBackToMenu}>Back</button>
+        <button className="coopBack" onClick={back}>Back</button>
 
         <div className="coopLeftPanel">
           <div className="panelTitle">Host Upload</div>
