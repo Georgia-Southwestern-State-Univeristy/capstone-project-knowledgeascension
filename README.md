@@ -35,8 +35,15 @@ npm run dev
 - Score tracking
 - Leaderboard
 
+
+## System Architecture
+
+![System Architecture](docs/architecture-diagram.png)
+
 ## Database Schema
+
 ![Database Schema](docs/database-schema.png)
+
 
 ## Testing
 8+ test cases with expected vs actual results.

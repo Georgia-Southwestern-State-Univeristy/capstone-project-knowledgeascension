@@ -1,20 +1,24 @@
 import React, { useState } from "react";
-import MainMenu from "./components/MainMenu";
-import EndlessMode from "./components/EndlessMode";
+import MainMenu from "./components/MainMenu.jsx";
+import EndlessMode from "./components/EndlessMode.jsx";
+import Shop from "./components/Shop.jsx";
 
 export default function App() {
-  const [screen, setScreen] = useState("menu");
+  const [screen, setScreen] = useState("menu"); // "menu" | "endless" | "shop"
+
+  if (screen === "endless") {
+    return <EndlessMode onBackToMenu={() => setScreen("menu")} />;
+  }
+
+  if (screen === "shop") {
+    return <Shop onBackToMenu={() => setScreen("menu")} />;
+  }
 
   return (
-    <>
-      {screen === "menu" && (
-        <MainMenu onStartEndless={() => setScreen("endless")} />
-      )}
-
-      {screen === "endless" && (
-        <EndlessMode onBackToMenu={() => setScreen("menu")} />
-      )}
-    </>
+    <MainMenu
+      onStartEndless={() => setScreen("endless")}
+      onOpenShop={() => setScreen("shop")}
+    />
   );
 }
 
