@@ -1,107 +1,59 @@
 // client/src/db/questionsDb.js
-// Simple in-memory question bank (no IndexedDB)
+// RUN-ONLY in-memory question bank.
+// - Non-shared across modes unless you explicitly call setRunBank in that mode.
+// - Reset every run by calling clearRunBank when entering/leaving a mode.
+//
 // Shape:
-// { id:number, text:string, a:string, b:string, c:string, d:string, correct:"a"|"b"|"c"|"d" }
+// { text, a, b, c, d, correct:"a"|"b"|"c"|"d" }
 
-const QUESTIONS = [
-  {
-    id: 1,
-    text: "What does CPU stand for?",
-    a: "Central Processing Unit",
-    b: "Computer Personal Unit",
-    c: "Central Power Utility",
-    d: "Control Program Unit",
-    correct: "a",
-  },
-  {
-    id: 2,
-    text: "Which data structure uses FIFO?",
-    a: "Stack",
-    b: "Queue",
-    c: "Tree",
-    d: "Graph",
-    correct: "b",
-  },
-  {
-    id: 3,
-    text: "Which protocol is used for secure web browsing?",
-    a: "HTTP",
-    b: "FTP",
-    c: "HTTPS",
-    d: "SMTP",
-    correct: "c",
-  },
-  {
-    id: 4,
-    text: "What is 2^5?",
-    a: "10",
-    b: "16",
-    c: "32",
-    d: "64",
-    correct: "c",
-  },
-  {
-    id: 5,
-    text: "Which one is a relational database?",
-    a: "MySQL",
-    b: "MongoDB",
-    c: "Redis",
-    d: "Neo4j",
-    correct: "a",
-  },
-  {
-    id: 6,
-    text: "What does RAM stand for?",
-    a: "Read Access Memory",
-    b: "Random Access Memory",
-    c: "Run Access Module",
-    d: "Rapid Action Memory",
-    correct: "b",
-  },
-  {
-    id: 7,
-    text: "Which is a version control system?",
-    a: "Node.js",
-    b: "Git",
-    c: "NPM",
-    d: "React",
-    correct: "b",
-  },
-  {
-    id: 8,
-    text: "Which language is primarily used for styling web pages?",
-    a: "HTML",
-    b: "CSS",
-    c: "JavaScript",
-    d: "Python",
-    correct: "b",
-  },
-  {
-    id: 9,
-    text: "What does SQL stand for?",
-    a: "Structured Query Language",
-    b: "Simple Query Logic",
-    c: "System Queue Language",
-    d: "Standard Question List",
-    correct: "a",
-  },
-  {
-    id: 10,
-    text: "What is 8 * 8?",
-    a: "16",
-    b: "32",
-    c: "64",
-    d: "128",
-    correct: "c",
-  },
-];
+let RUN_BANK = [];
 
-export async function seedQuestionsIfNeeded() {
-  return true;
+function normalizeCorrect(v) {
+  const s = String(v || "").trim().toLowerCase();
+  return ["a", "b", "c", "d"].includes(s) ? s : "a";
+}
+
+function normalizeQuestion(q) {
+  if (!q) return null;
+
+  const text = String(q.text || "").trim();
+  const a = String(q.a || "").trim();
+  const b = String(q.b || "").trim();
+  const c = String(q.c || "").trim();
+  const d = String(q.d || "").trim();
+  const correct = normalizeCorrect(q.correct);
+
+  if (!text || !a || !b || !c || !d) return null;
+  return { text, a, b, c, d, correct };
+}
+
+export function clearRunBank() {
+  RUN_BANK = [];
+}
+
+export function hasRunBank() {
+  return RUN_BANK.length > 0;
+}
+
+export function getRunBankSize() {
+  return RUN_BANK.length;
+}
+
+export function setRunBank(questions) {
+  const list = Array.isArray(questions) ? questions : [];
+  const out = [];
+
+  for (const q of list) {
+    const n = normalizeQuestion(q);
+    if (n) out.push(n);
+  }
+
+  RUN_BANK = out;
+  return RUN_BANK.length;
 }
 
 export async function getRandomQuestion() {
-  if (!QUESTIONS.length) return null;
-  const q = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
+  if (!RUN_BANK.length) return null;
+  const q = RUN_BANK[Math.floor(Math.random() * RUN_BANK.length)];
   return { ...q };
 }

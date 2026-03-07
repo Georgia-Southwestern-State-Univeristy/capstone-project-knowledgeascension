@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { CHARACTERS, DEFAULT_CHARACTER_ID } from "../db/characters";
 
 const AuthContext = createContext(null);
 
@@ -45,27 +46,49 @@ function txPut(db, storeName, value) {
   });
 }
 
-function txDel(db, storeName, key) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, "readwrite");
-    const store = tx.objectStore(storeName);
-    const req = store.delete(key);
-    req.onsuccess = () => resolve(true);
-    req.onerror = () => reject(req.error);
-  });
-}
-
 function safeLower(v) {
   return String(v || "").trim().toLowerCase();
 }
 
+function statsFromCharacters() {
+  const map = {};
+  for (const c of CHARACTERS) {
+    if (c?.id && c?.baseStats) map[String(c.id).toLowerCase()] = { ...c.baseStats };
+  }
+  return map;
+}
+
 function defaultProfile(username) {
+  const all = statsFromCharacters();
+  const knightStats = all[DEFAULT_CHARACTER_ID] || { health: 78, damage: 22, loot: 40 };
+
   return {
     username,
     coins: 0,
-    ownedCharacters: ["knight"],
-    equippedCharacter: "knight",
+    ownedCharacters: [DEFAULT_CHARACTER_ID],
+    equippedCharacter: DEFAULT_CHARACTER_ID,
+    characterStats: {
+      [DEFAULT_CHARACTER_ID]: knightStats,
+    },
   };
+}
+
+function ensureStats(profile) {
+  const p = profile || null;
+  if (!p) return p;
+
+  const all = statsFromCharacters();
+  const owned = Array.isArray(p.ownedCharacters) ? p.ownedCharacters.map(safeLower) : [DEFAULT_CHARACTER_ID];
+
+  const merged = { ...(p.characterStats || {}) };
+  for (const id of owned) {
+    if (!merged[id]) merged[id] = all[id] || all[DEFAULT_CHARACTER_ID] || { health: 78, damage: 22, loot: 40 };
+  }
+
+  const equipped = safeLower(p.equippedCharacter || DEFAULT_CHARACTER_ID);
+  if (!merged[equipped]) merged[equipped] = all[equipped] || all[DEFAULT_CHARACTER_ID] || { health: 78, damage: 22, loot: 40 };
+
+  return { ...p, ownedCharacters: owned, equippedCharacter: equipped, characterStats: merged };
 }
 
 export function AuthProvider({ children }) {
@@ -86,25 +109,27 @@ export function AuthProvider({ children }) {
         const savedUser = localStorage.getItem("ka_username") || "";
         if (savedUser) {
           const u = safeLower(savedUser);
-          const prof = await txGet(_db, "profiles", u);
+          const profRaw = await txGet(_db, "profiles", u);
+          const prof = ensureStats(profRaw || defaultProfile(u));
+
           setUsername(u);
-          setProfile(prof || defaultProfile(u));
-          if (!prof) await txPut(_db, "profiles", defaultProfile(u));
+          setProfile(prof);
+
+          if (!profRaw) await txPut(_db, "profiles", prof);
+          else await txPut(_db, "profiles", prof); // keep stats normalized
         }
       } finally {
         if (alive) setLoading(false);
       }
     })();
 
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   const refreshProfile = async (_db, u) => {
-    const prof = await txGet(_db, "profiles", u);
-    const finalProf = prof || defaultProfile(u);
-    if (!prof) await txPut(_db, "profiles", finalProf);
+    const profRaw = await txGet(_db, "profiles", u);
+    const finalProf = ensureStats(profRaw || defaultProfile(u));
+    await txPut(_db, "profiles", finalProf);
     setProfile(finalProf);
     return finalProf;
   };
@@ -122,7 +147,7 @@ export function AuthProvider({ children }) {
 
     await txPut(db, "users", { username: u, password: p });
 
-    const prof = defaultProfile(u);
+    const prof = ensureStats(defaultProfile(u));
     await txPut(db, "profiles", prof);
 
     localStorage.setItem("ka_username", u);
@@ -155,13 +180,13 @@ export function AuthProvider({ children }) {
     const u = safeLower(username);
     if (!u) return;
 
-    const prof = await txGet(db, "profiles", u);
-    const cur = prof || defaultProfile(u);
+    const profRaw = await txGet(db, "profiles", u);
+    const cur = ensureStats(profRaw || defaultProfile(u));
 
-    const next = {
+    const next = ensureStats({
       ...cur,
       coins: Math.max(0, Number(cur.coins || 0) + Number(delta || 0)),
-    };
+    });
 
     await txPut(db, "profiles", next);
     setProfile(next);
@@ -176,12 +201,11 @@ export function AuthProvider({ children }) {
     const id = safeLower(characterId);
     const cost = Math.max(0, Number(price || 0));
 
-    const prof = await txGet(db, "profiles", u);
-    const cur = prof || defaultProfile(u);
+    const profRaw = await txGet(db, "profiles", u);
+    const cur = ensureStats(profRaw || defaultProfile(u));
 
     const owned = new Set((cur.ownedCharacters || []).map(safeLower));
     if (owned.has(id)) {
-      // already owned, treat as success
       setProfile(cur);
       return true;
     }
@@ -191,11 +215,18 @@ export function AuthProvider({ children }) {
 
     owned.add(id);
 
-    const next = {
+    const all = statsFromCharacters();
+    const statsForNew = all[id] || all[DEFAULT_CHARACTER_ID];
+
+    const next = ensureStats({
       ...cur,
       coins: curCoins - cost,
       ownedCharacters: Array.from(owned),
-    };
+      characterStats: {
+        ...(cur.characterStats || {}),
+        [id]: statsForNew,
+      },
+    });
 
     await txPut(db, "profiles", next);
     setProfile(next);
@@ -209,16 +240,16 @@ export function AuthProvider({ children }) {
 
     const id = safeLower(characterId);
 
-    const prof = await txGet(db, "profiles", u);
-    const cur = prof || defaultProfile(u);
+    const profRaw = await txGet(db, "profiles", u);
+    const cur = ensureStats(profRaw || defaultProfile(u));
 
     const owned = new Set((cur.ownedCharacters || []).map(safeLower));
     if (!owned.has(id)) throw new Error("Character not owned.");
 
-    const next = {
+    const next = ensureStats({
       ...cur,
       equippedCharacter: id,
-    };
+    });
 
     await txPut(db, "profiles", next);
     setProfile(next);

@@ -1,9 +1,8 @@
-// client/src/components/CoopMode.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./coop.css";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { CHARACTERS } from "../db/characters";
-import { getCoopSocket, disconnectCoopSocket } from "../db/coopSocket.js";
+import { getCoopSocket } from "../net/coopSocket.js";
 
 function folderForEquippedId(id) {
   const key = String(id || "knight").toLowerCase();
@@ -20,8 +19,26 @@ export default function CoopMode({ room, onBackToMenu }) {
   const [endReason, setEndReason] = useState("");
   const [localDeadUntil, setLocalDeadUntil] = useState(0);
 
+  const [bossQuake, setBossQuake] = useState(false);
+  const [playerQuakeMap, setPlayerQuakeMap] = useState({});
+
+  const prevBossHpRef = useRef(null);
+  const prevHpMapRef = useRef({});
+
   const socketRef = useRef(null);
-  const roomCode = String(room?.code || "").toUpperCase();
+  const roomCode = useMemo(() => String(room?.code || "").toUpperCase(), [room?.code]);
+
+  const quakeBoss = () => {
+    setBossQuake(true);
+    window.setTimeout(() => setBossQuake(false), 220);
+  };
+
+  const quakePlayer = (playerId) => {
+    setPlayerQuakeMap((m) => ({ ...m, [playerId]: true }));
+    window.setTimeout(() => {
+      setPlayerQuakeMap((m) => ({ ...m, [playerId]: false }));
+    }, 220);
+  };
 
   useEffect(() => {
     if (!roomCode) return;
@@ -29,19 +46,61 @@ export default function CoopMode({ room, onBackToMenu }) {
     const s = getCoopSocket();
     socketRef.current = s;
 
-    const onConnect = () => setSocketId(s.id);
-    const onRoomState = (st) => setState(st);
-    const onQuestion = (payload) => setQ(payload?.q || null);
+    const onConnect = () => {
+      setSocketId(s.id);
+      s.emit("coop:request_question", { code: roomCode });
+    };
+
+    const onRoomState = (st) => {
+      const bossHpNow = Number(st?.bossHp ?? 0);
+      const bossHpPrev = prevBossHpRef.current;
+
+      if (bossHpPrev != null && bossHpNow < bossHpPrev) {
+        quakeBoss();
+      }
+      prevBossHpRef.current = bossHpNow;
+
+      const prevHpMap = { ...(prevHpMapRef.current || {}) };
+      const curPlayers = Array.isArray(st?.players) ? st.players : [];
+
+      for (const p of curPlayers) {
+        const prev = Number(prevHpMap[p.id] ?? p.hp);
+        const now = Number(p.hp ?? 0);
+        if (now < prev) {
+          quakePlayer(p.id);
+        }
+        prevHpMap[p.id] = now;
+      }
+
+      prevHpMapRef.current = prevHpMap;
+      setState(st);
+    };
+
+    const onQuestion = (payload) => {
+      setQ(payload?.q || null);
+    };
+
     const onStarted = (st) => {
       setEndReason("");
       setState(st);
-      // server separately emits coop:question; we don’t depend on st.curQuestion
+      s.emit("coop:request_question", { code: roomCode });
     };
 
     const onHit = async (payload) => {
       if (!payload) return;
+
+      quakeBoss();
+
       if (payload.playerId === s.id && payload.coinDrop > 0) {
-        try { await addCoins(payload.coinDrop); } catch {}
+        try {
+          await addCoins(payload.coinDrop);
+        } catch {}
+      }
+    };
+
+    const onPlayerHurt = (payload) => {
+      if (payload?.playerId) {
+        quakePlayer(payload.playerId);
       }
     };
 
@@ -54,6 +113,7 @@ export default function CoopMode({ room, onBackToMenu }) {
     s.on("coop:question", onQuestion);
     s.on("coop:started", onStarted);
     s.on("coop:hit", onHit);
+    s.on("coop:player_hurt", onPlayerHurt);
     s.on("coop:ended", onEnded);
 
     if (s.connected) onConnect();
@@ -64,7 +124,9 @@ export default function CoopMode({ room, onBackToMenu }) {
       s.off("coop:question", onQuestion);
       s.off("coop:started", onStarted);
       s.off("coop:hit", onHit);
+      s.off("coop:player_hurt", onPlayerHurt);
       s.off("coop:ended", onEnded);
+
       socketRef.current = null;
     };
   }, [roomCode, addCoins]);
@@ -72,16 +134,18 @@ export default function CoopMode({ room, onBackToMenu }) {
   const me = state?.players?.find((p) => p.id === socketId);
   const bossHp = Number(state?.bossHp || 0);
   const bossHpMax = 5000;
-
   const timerMs = Number(state?.timerMs || 0);
   const timerMax = 5 * 60 * 1000;
-
   const started = !!state?.started;
 
   useEffect(() => {
     if (!me) return;
-    if (me.hp <= 0) setLocalDeadUntil(Date.now() + 5000);
-    else setLocalDeadUntil(0);
+    if (me.hp <= 0) {
+      const until = Date.now() + 5000;
+      setLocalDeadUntil(until);
+    } else {
+      setLocalDeadUntil(0);
+    }
   }, [me?.hp]);
 
   const sendAnswer = (picked) => {
@@ -97,21 +161,15 @@ export default function CoopMode({ room, onBackToMenu }) {
   const remaining = Math.max(0, localDeadUntil - Date.now());
   const respawnReady = me?.hp <= 0 && remaining <= 0;
 
-  const exit = () => {
-    // leaving co-op entirely
-    disconnectCoopSocket();
-    onBackToMenu?.();
-  };
-
   return (
     <div className="coopRoot">
       <img className="coopBg" src="/assets/arenas/boss_stage.png" alt="Boss Arena" draggable="false" />
-      <div className="coopStage">
-        <button className="coopExit" onClick={exit}>Main Menu</button>
 
-        {/* Manual: UI placement vars are in coop.css */}
+      <div className="coopStage">
+        <button className="coopExit" onClick={onBackToMenu}>Main Menu</button>
+
         <div className="coopTopBars">
-          <div className="barBlock">
+          <div className="barBlock bossBlock">
             <div className="barLabel">Boss</div>
             <div className="barOuter">
               <div
@@ -122,7 +180,7 @@ export default function CoopMode({ room, onBackToMenu }) {
             <div className="barValue">{bossHp} / {bossHpMax}</div>
           </div>
 
-          <div className="barBlock">
+          <div className="barBlock timeBlock">
             <div className="barLabel">Time</div>
             <div className="barOuter">
               <div
@@ -135,13 +193,19 @@ export default function CoopMode({ room, onBackToMenu }) {
         </div>
 
         <div className="bossWrap">
-          <img className="bossSprite" src="/assets/enemies/boss.png" alt="Boss" draggable="false" />
+          <img
+            className={bossQuake ? "bossSprite quake" : "bossSprite"}
+            src="/assets/enemies/boss.png"
+            alt="Boss"
+            draggable="false"
+          />
         </div>
 
         <div className="playersRow">
           {(state?.players || []).map((p) => {
             const folder = folderForEquippedId(p.equipped);
             const sprite = `/assets/characters/${folder}/back.png`;
+            const quaking = !!playerQuakeMap[p.id];
 
             return (
               <div className="playerSlot" key={p.id}>
@@ -149,7 +213,13 @@ export default function CoopMode({ room, onBackToMenu }) {
                   <div className="nm">{p.name}</div>
                   <div className={p.hp > 0 ? "hp ok" : "hp dead"}>HP {p.hp}</div>
                 </div>
-                <img className="playerSprite" src={sprite} alt={p.name} draggable="false" />
+
+                <img
+                  className={quaking ? "playerSprite quake" : "playerSprite"}
+                  src={sprite}
+                  alt={p.name}
+                  draggable="false"
+                />
               </div>
             );
           })}
@@ -171,8 +241,8 @@ export default function CoopMode({ room, onBackToMenu }) {
               </div>
             ) : !q ? (
               <div className="qCenter">
-                <div className="qTitle">Loading questions…</div>
-                <div className="qSub">Host needs to upload study files.</div>
+                <div className="qTitle">Loading your question…</div>
+                <div className="qSub">You’ll get your own random stream.</div>
               </div>
             ) : (
               <>
@@ -187,12 +257,14 @@ export default function CoopMode({ room, onBackToMenu }) {
 
                 {me?.hp <= 0 && (
                   <div className="deadOverlay">
-                    <div className="deadTitle">You’re down</div>
-                    {!respawnReady ? (
-                      <div className="deadSub">Respawning in {Math.ceil(remaining / 1000)}…</div>
-                    ) : (
-                      <button className="respawnBtn" onClick={respawn}>Respawn</button>
-                    )}
+                    <div>
+                      <div className="deadTitle">You’re down</div>
+                      {!respawnReady ? (
+                        <div className="deadSub">Respawning in {Math.ceil(remaining / 1000)}…</div>
+                      ) : (
+                        <button className="respawnBtn" onClick={respawn}>Respawn</button>
+                      )}
+                    </div>
                   </div>
                 )}
               </>

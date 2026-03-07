@@ -1,0 +1,245 @@
+.v1GameRoot, .v1GameRoot * { box-sizing: border-box; }
+
+:root{
+  --v1ExitLeft: 24px;
+  --v1ExitTop: 18px;
+
+  --v1HudTop: 18px;
+  --v1HudLeft: 50%;
+  --v1HudW: min(980px, 92vw);
+  --v1HudGap: 14px;
+
+  --v1EnemyX: 62%;
+  --v1EnemyY: 44%;
+  --v1EnemyW: 520px;
+
+  --v1MeX: 26%;
+  --v1MeY: 62%;
+  --v1MeW: 760px;
+
+  --v1QX: 50%;
+  --v1QY: 84%;
+  --v1QW: min(1280px, 96vw);
+
+  --v1QTextX: 70px;
+  --v1QTextY: 180px;
+  --v1QTextW: 62%;
+  --v1QTextH: 260px;
+  --v1QFont: 26px;
+
+  --v1AnsX: 760px;
+  --v1AnsY: 230px;
+  --v1AnsW: 20%;
+  --v1AnsGap: 10px;
+  --v1AnsFont: 18px;
+
+  --v1Blur: 6px;
+}
+
+.v1GameRoot{
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.v1Arena{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.v1Exit{
+  position: absolute;
+  left: var(--v1ExitLeft);
+  top: var(--v1ExitTop);
+  z-index: 50;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.v1Hud{
+  position: absolute;
+  left: var(--v1HudLeft);
+  top: var(--v1HudTop);
+  transform: translateX(-50%);
+  width: var(--v1HudW);
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--v1HudGap);
+}
+
+.v1HudBlock{
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(var(--v1Blur));
+  -webkit-backdrop-filter: blur(var(--v1Blur));
+  color: #fff;
+}
+
+.v1HudBlock.me{
+  opacity: 0.95;
+}
+
+.v1HudName{
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.v1HudBar{
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  overflow: hidden;
+}
+
+.v1HudFill{
+  height: 100%;
+  background: rgba(255, 210, 120, 0.85);
+}
+
+.v1HudNum{
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.v1Sprites{
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.v1Enemy{
+  position: absolute;
+  left: var(--v1EnemyX);
+  top: var(--v1EnemyY);
+  transform: translate(-50%, -50%);
+  width: var(--v1EnemyW);
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 14px 30px rgba(0,0,0,0.50));
+}
+
+.v1Me{
+  position: absolute;
+  left: var(--v1MeX);
+  top: var(--v1MeY);
+  transform: translate(-50%, -50%);
+  width: var(--v1MeW);
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 14px 30px rgba(0,0,0,0.55));
+}
+
+.quake{
+  animation: quake 0.22s linear;
+}
+
+@keyframes quake{
+  0%{ transform: translate(-50%, -50%) translate(0,0); }
+  20%{ transform: translate(-50%, -50%) translate(-6px,2px); }
+  40%{ transform: translate(-50%, -50%) translate(6px,-2px); }
+  60%{ transform: translate(-50%, -50%) translate(-5px,-2px); }
+  80%{ transform: translate(-50%, -50%) translate(5px,2px); }
+  100%{ transform: translate(-50%, -50%) translate(0,0); }
+}
+
+.v1QuestionHud{
+  position: absolute;
+  left: var(--v1QX);
+  top: var(--v1QY);
+  transform: translate(-50%, -50%);
+  z-index: 45;
+  width: var(--v1QW);
+}
+
+.v1QFrame{
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.v1QInner{
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.v1QText{
+  position: absolute;
+  left: var(--v1QTextX);
+  top: var(--v1QTextY);
+  width: var(--v1QTextW);
+  height: var(--v1QTextH);
+  font-weight: 900;
+  color: #2b1a0a;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.10);
+  font-size: var(--v1QFont);
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.v1AnsCol{
+  position: absolute;
+  left: var(--v1AnsX);
+  top: var(--v1AnsY);
+  width: var(--v1AnsW);
+  display: flex;
+  flex-direction: column;
+  gap: var(--v1AnsGap);
+}
+
+.v1Ans{
+  cursor: pointer;
+  border-radius: 10px;
+  border: 1px solid rgba(43,26,10,0.18);
+  background: rgba(255,255,255,0.10);
+  color: #2b1a0a;
+  font-weight: 900;
+  font-size: var(--v1AnsFont);
+  padding: 10px 14px;
+  text-align: left;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  transition: transform .08s ease, filter .08s ease;
+}
+
+.v1Ans:hover{
+  transform: scale(1.02);
+  filter: brightness(1.08);
+}
+
+.v1Center{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #2b1a0a;
+}
+
+.v1Title{
+  font-weight: 900;
+  font-size: 22px;
+}
+.v1Sub{
+  margin-top: 8px;
+  font-weight: 800;
+  opacity: 0.8;
+}

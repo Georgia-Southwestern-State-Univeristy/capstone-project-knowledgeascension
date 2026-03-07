@@ -13,10 +13,6 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/*
-  MANUAL (PRICES):
-  Edit prices here (code-only).
-*/
 const PRICES = {
   knight: 0,
   archer: 75,
@@ -36,6 +32,23 @@ const BTN_MENU = "/assets/ui/btn_menu.png";
 const BTN_PURCHASE = "/assets/ui/btn_purchase.png";
 const BTN_EQUIP = "/assets/ui/btn_equip.png";
 
+function safeLower(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+function StatBar({ label, value }) {
+  const v = Math.max(0, Math.min(100, Number(value || 0)));
+  return (
+    <div className="shopStatRow">
+      <div className="shopStatLabel">{label}</div>
+      <div className="shopStatTrack">
+        <div className="shopStatFill" style={{ width: `${v}%` }} />
+      </div>
+      <div className="shopStatNum">{v}</div>
+    </div>
+  );
+}
+
 export default function Shop({ onBackToMenu }) {
   const { username, profile, purchaseCharacter, equipCharacter } = useAuth();
 
@@ -47,20 +60,16 @@ export default function Shop({ onBackToMenu }) {
     setArenaBg(pick(ARENAS));
   }, []);
 
-  const owned = useMemo(() => new Set(profile?.ownedCharacters || []), [profile]);
-  const equipped = String(profile?.equippedCharacter || DEFAULT_CHARACTER_ID).toLowerCase();
+  const owned = useMemo(() => new Set((profile?.ownedCharacters || []).map(safeLower)), [profile]);
+  const equipped = safeLower(profile?.equippedCharacter || DEFAULT_CHARACTER_ID);
   const coins = Number(profile?.coins || 0);
+  const statMap = profile?.characterStats || {};
 
   const doBuy = async (ch) => {
     if (!username) {
       setMsg("You must be logged in to purchase.");
       return;
     }
-    if (typeof purchaseCharacter !== "function") {
-      setMsg("Shop functions not wired yet (purchaseCharacter missing).");
-      return;
-    }
-
     setMsg("");
     setBusyId(ch.id);
 
@@ -81,11 +90,6 @@ export default function Shop({ onBackToMenu }) {
       setMsg("You must be logged in to equip.");
       return;
     }
-    if (typeof equipCharacter !== "function") {
-      setMsg("Shop functions not wired yet (equipCharacter missing).");
-      return;
-    }
-
     setMsg("");
     setBusyId(ch.id);
 
@@ -108,7 +112,6 @@ export default function Shop({ onBackToMenu }) {
           <img src={BTN_MENU} alt="Menu" draggable="false" />
         </button>
 
-        {/* Shop icon (PNG) */}
         <div className="shopTitleIcon">
           <img className="shopIconImg" src={SHOP_ICON} alt="Shop" draggable="false" />
         </div>
@@ -124,9 +127,7 @@ export default function Shop({ onBackToMenu }) {
         </div>
 
         <div className="shopPaper">
-          {/* Blur layer behind scroll only */}
           <div className="shopPaperBlur" aria-hidden="true" />
-
           <img className="shopScrollImg" src={SCROLL_IMG} alt="" draggable="false" />
 
           <div className="paperMask">
@@ -142,12 +143,15 @@ export default function Shop({ onBackToMenu }) {
                 const price = PRICES[ch.id] ?? 0;
                 const imgSrc = `/assets/characters/${ch.folderName}/front.png`;
 
+                const st = statMap[ch.id] || ch.baseStats;
+
                 return (
                   <div className="shopRow" key={ch.id}>
                     <div className="shopCharPreview">
                       <img src={imgSrc} alt={ch.displayName} draggable="false" />
                     </div>
 
+                    {/* New middle column layout: info + stat bars + actions */}
                     <div className="shopCharInfo">
                       <div className="shopCharName">{ch.displayName}</div>
 
@@ -169,6 +173,13 @@ export default function Shop({ onBackToMenu }) {
                             <span className="tag locked">Locked</span>
                           )}
                         </div>
+                      </div>
+
+                      {/* Stat bars BETWEEN sprite and the button area */}
+                      <div className="shopStatBars">
+                        <StatBar label="HP" value={st.health} />
+                        <StatBar label="DMG" value={st.damage} />
+                        <StatBar label="LOOT" value={st.loot} />
                       </div>
 
                       <div className="shopActions">

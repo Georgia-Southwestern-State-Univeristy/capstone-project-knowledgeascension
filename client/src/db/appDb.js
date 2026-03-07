@@ -2,15 +2,24 @@ import Dexie from "dexie";
 
 export const appDb = new Dexie("knowledge_ascension_db");
 
+// v1 (existing users/profiles)
+// v2 adds questions + meta
 appDb.version(1).stores({
   users: "username, passwordHash, createdAt",
-  profiles: "username, coins, equippedCharacter"
+  profiles: "username, coins, equippedCharacter",
+});
+
+appDb.version(2).stores({
+  users: "username, passwordHash, createdAt",
+  profiles: "username, coins, equippedCharacter",
+  questions: "id",
+  question_meta: "key",
 });
 
 export async function sha256(text) {
   const enc = new TextEncoder().encode(text);
   const buf = await crypto.subtle.digest("SHA-256", enc);
-  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 export async function createAccount({ username, password }) {
@@ -26,14 +35,14 @@ export async function createAccount({ username, password }) {
   await appDb.users.add({
     username: cleanUser,
     passwordHash,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   });
 
   await appDb.profiles.put({
     username: cleanUser,
     coins: 0,
     equippedCharacter: "knight",
-    ownedCharacters: ["knight"]
+    ownedCharacters: ["knight"],
   });
 
   return cleanUser;

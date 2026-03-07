@@ -7,54 +7,50 @@
   background: #000;
 }
 
-
 :root{
-  /* Background */
-  --shopBgDim: 0.00;          /* Manual: 0.00 - 0.25 optional dim */
+  --shopBgDim: 0.00;
 
-  /* Top UI placement */
-  --menuBtnLeft: 40px;        /* Manual: Menu button X */
-  --menuBtnTop: 24px;         /* Manual: Menu button Y */
-  --menuBtnWidth: 150px;      /* Manual: Menu button PNG width */
+  --menuBtnLeft: 40px;
+  --menuBtnTop: 24px;
+  --menuBtnWidth: 150px;
 
-  --shopIconTop: 22px;        /* Manual: SHOP ICON box Y */
-  --shopIconW: 520px;         /* Manual: SHOP ICON box width */
-  --shopIconH: 150px;         /* Manual: SHOP ICON box height */
+  --shopIconTop: 22px;
+  --shopIconW: 520px;
+  --shopIconH: 150px;
 
-  --coinsRight: 44px;         /* Manual: coins block X (from right) */
-  --coinsTop: 22px;           /* Manual: coins block Y */
-  --coinsFont: 34px;          /* Manual: coin number font size */
-  --coinIconSize: 48px;       /* Manual: coin icon size */
+  --coinsRight: 44px;
+  --coinsTop: 22px;
+  --coinsFont: 34px;
+  --coinIconSize: 48px;
 
-  /* Scroll box placement/size */
-  --scrollW: min(1600px, 100vw); /* Manual: scroll overall width */
-  --scrollH: min(1000px, 85vh);  /* Manual: scroll overall height */
-  --scrollTop: 52%;             /* Manual: scroll center Y */
-  --scrollLeft: 50%;            /* Manual: scroll center X */
+  --scrollW: min(1600px, 100vw);
+  --scrollH: min(1000px, 85vh);
+  --scrollTop: 52%;
+  --scrollLeft: 50%;
 
-  /* Scroll inner mask (push content inward) */
-  --maskLeft: 21%;            /* Manual: move content inward from left edge of scroll */
-  --maskRight: 20%;           /* Manual: move content inward from right edge */
-  --maskTop: 14%;             /* Manual: move content downward from top edge */
-  --maskBottom: 14%;          /* Manual: move content upward from bottom edge */
+  --maskLeft: 21%;
+  --maskRight: 20%;
+  --maskTop: 14%;
+  --maskBottom: 14%;
 
-  /* Row layout sizing */
-  --rowSpriteCol: 50px;      /* Manual: sprite column width */
-  --spriteImgW: 200px;        /* Manual: character sprite display width */
+  --rowSpriteCol: 260px;
+  --spriteImgW: 200px;
 
-  --nameFont: 30px;           /* Manual: character name font size */
-  --metaFont: 18px;           /* Manual: Price/labels font size */
+  --nameFont: 30px;
+  --metaFont: 18px;
 
-  --actionBtnW: 350px;        /* Manual: Purchase/Equip button PNG width */
+  --actionBtnW: 350px;
 
-  /* Spacing */
-  --rowPadY: 18px;            /* Manual: row vertical padding */
-  --rowGap: 18px;             /* Manual: gap between sprite and info */
+  --rowPadY: 18px;
+  --rowGap: 18px;
+
+  /* Stat bar sizing */
+  --statTrackW: 260px;
+  --statTrackH: 12px;
+  --statLabelW: 58px;
+  --statNumW: 34px;
 }
 
-/* ---------------------------
-   Background
----------------------------- */
 .shopBg{
   position: absolute;
   inset: 0;
@@ -72,9 +68,6 @@
   z-index: 2;
 }
 
-/* ---------------------------
-   Top UI
----------------------------- */
 .shopBackBtn{
   position: absolute;
   left: var(--menuBtnLeft);
@@ -125,9 +118,7 @@
   -webkit-user-drag: none;
 }
 
-.shopCoinsValue{
-  min-width: 40px;
-}
+.shopCoinsValue{ min-width: 40px; }
 
 .shopAccountHint{
   margin-top: 6px;
@@ -135,9 +126,7 @@
   opacity: 0.9;
 }
 
-/* ---------------------------
-   Scroll container
----------------------------- */
+/* Scroll container */
 .shopPaper{
   position: absolute;
   left: var(--scrollLeft);
@@ -147,7 +136,6 @@
   height: var(--scrollH);
   z-index: 10;
 }
-
 
 .shopPaperBlur{
   position: absolute;
@@ -174,7 +162,6 @@
   z-index: 0;
 }
 
-/* Mask keeps everything INSIDE the parchment area */
 .paperMask{
   position: absolute;
   left: var(--maskLeft);
@@ -187,9 +174,7 @@
   flex-direction: column;
 }
 
-/* ---------------------------
-   Header / Footer inside scroll
----------------------------- */
+/* Header / Footer */
 .paperHeader{
   padding: 14px 12px 8px 12px;
   display: flex;
@@ -213,9 +198,7 @@
   text-align: right;
 }
 
-.paperMsg.muted{
-  opacity: 0.0;
-}
+.paperMsg.muted{ opacity: 0.0; }
 
 .paperFooter{
   padding: 10px 12px 14px 12px;
@@ -225,9 +208,7 @@
   text-align: center;
 }
 
-/* ---------------------------
-   Scroll list area
----------------------------- */
+/* Scroll list */
 .paperScroll{
   flex: 1;
   overflow-y: auto;
@@ -244,9 +225,7 @@
   border-radius: 999px;
 }
 
-/* ---------------------------
-   Character rows
----------------------------- */
+/* Character rows */
 .shopRow{
   display: grid;
   grid-template-columns: var(--rowSpriteCol) 1fr;
@@ -256,9 +235,7 @@
   border-top: 1px solid rgba(43,26,10,0.14);
 }
 
-.shopRow:first-child{
-  border-top: none;
-}
+.shopRow:first-child{ border-top: none; }
 
 .shopCharPreview{
   display:flex;
@@ -274,15 +251,20 @@
   -webkit-user-drag: none;
 }
 
+/* Updated: 2-column inside the right side:
+   - left: name/meta/statbars
+   - right: purchase/equip button
+*/
 .shopCharInfo{
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   gap: 10px 16px;
   align-items: center;
 }
 
 .shopCharName{
+  grid-column: 1 / 2;
   font-size: var(--nameFont);
   font-weight: 900;
   color: #2b1a0a;
@@ -318,7 +300,6 @@
   -webkit-user-drag: none;
 }
 
-/* status tags */
 .tag{
   display: inline-flex;
   align-items: center;
@@ -330,25 +311,60 @@
   user-select: none;
 }
 
-.tag.locked{
-  background: rgba(120, 20, 20, 0.75);
-  color: #fff;
-}
-.tag.owned{
-  background: rgba(20, 90, 40, 0.75);
-  color: #fff;
-}
-.tag.equipped{
-  background: rgba(100, 70, 10, 0.75);
-  color: #fff;
+.tag.locked{ background: rgba(120, 20, 20, 0.75); color: #fff; }
+.tag.owned{ background: rgba(20, 90, 40, 0.75); color: #fff; }
+.tag.equipped{ background: rgba(100, 70, 10, 0.75); color: #fff; }
+
+/* Stat bars block (NEW) */
+.shopStatBars{
+  grid-column: 1 / 2;
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(43,26,10,0.12);
 }
 
-/* ---------------------------
-   PNG buttons (no invisible hitboxes)
----------------------------- */
+.shopStatRow{
+  display: grid;
+  grid-template-columns: var(--statLabelW) var(--statTrackW) var(--statNumW);
+  gap: 10px;
+  align-items: center;
+}
+
+.shopStatLabel{
+  font-size: 14px;
+  font-weight: 900;
+  color: #2b1a0a;
+  text-align: left;
+}
+
+.shopStatTrack{
+  height: var(--statTrackH);
+  border-radius: 999px;
+  background: rgba(43,26,10,0.15);
+  overflow: hidden;
+}
+
+.shopStatFill{
+  height: 100%;
+  width: 0%;
+  background: rgba(43,26,10,0.70);
+  border-radius: 999px;
+}
+
+.shopStatNum{
+  font-size: 14px;
+  font-weight: 900;
+  color: #2b1a0a;
+  text-align: right;
+}
+
+/* Action buttons */
 .shopActions{
   grid-column: 2 / 3;
-  grid-row: 1 / 3;
+  grid-row: 1 / 4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -378,12 +394,8 @@
   pointer-events: none;
 }
 
-/* Menu button uses same base class; set width separately */
-.shopBackBtn.shopImgBtn img{
-  width: var(--menuBtnWidth);
-}
+.shopBackBtn.shopImgBtn img{ width: var(--menuBtnWidth); }
 
-/* Glow + scale */
 .glowBtn{
   position: relative;
   transform: translateZ(0);
@@ -406,9 +418,7 @@
   filter: brightness(1.05);
 }
 
-.glowBtn:hover::before{
-  opacity: 1;
-}
+.glowBtn:hover::before{ opacity: 1; }
 
 .shopImgBtn:disabled{
   opacity: 0.65;

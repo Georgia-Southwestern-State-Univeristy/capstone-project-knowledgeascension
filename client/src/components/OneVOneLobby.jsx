@@ -1,11 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import "./coopLobby.css";
+import "./onevoneLobby.css";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { getCoopSocket } from "../net/coopSocket.js";
+import { getOneVOneSocket } from "../net/onevoneSocket.js";
 
-function getCoopServerBase() {
+function getServerBase() {
   const host = window.location.hostname;
   return `http://${host}:5175`;
+}
+
+function safeLower(v) {
+  return String(v || "").trim().toLowerCase();
 }
 
 function uploadFormDataWithProgress(url, formData, onUploadPct) {
@@ -34,28 +38,31 @@ function uploadFormDataWithProgress(url, formData, onUploadPct) {
   });
 }
 
-export default function CoopLobby({ onBackToMenu, onEnterGame }) {
+export default function OneVOneLobby({ onBackToMenu, onEnterGame }) {
   const { username, profile } = useAuth();
 
-  const [mode, setMode] = useState("join");
-  const [name, setName] = useState(username || "");
+  const apiBase = useMemo(() => getServerBase(), []);
+  const socketRef = useRef(null);
+
+  const [connected, setConnected] = useState(false);
+  const [socketId, setSocketId] = useState("");
+
+  const [mode, setMode] = useState("join"); // join | host
+  const [name, setName] = useState(username || "Player");
   const [code, setCode] = useState("");
-  const [err, setErr] = useState("");
 
   const [room, setRoom] = useState(null);
-  const [socketId, setSocketId] = useState("");
-  const [connected, setConnected] = useState(false);
+  const [err, setErr] = useState("");
 
+  // Host upload UX
   const [uploadLocked, setUploadLocked] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [progressPct, setProgressPct] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
 
   const genTimerRef = useRef(null);
-  const socketRef = useRef(null);
 
-  const equipped = String(profile?.equippedCharacter || "knight").toLowerCase();
-  const apiBase = useMemo(() => getCoopServerBase(), []);
+  const equipped = safeLower(profile?.equippedCharacter || "knight");
 
   const stopGenTimer = () => {
     if (genTimerRef.current) {
@@ -69,7 +76,7 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
     setProgressLabel("Generating questions…");
     setProgressPct((p) => Math.max(p, 12));
 
-    genTimerRef.current = setInterval(() => {
+    genTimerRef.current = window.setInterval(() => {
       setProgressPct((p) => {
         const next = p + Math.max(1, Math.round((95 - p) * 0.06));
         return Math.min(95, next);
@@ -80,7 +87,7 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
   useEffect(() => {
     setErr("");
 
-    const s = getCoopSocket();
+    const s = getOneVOneSocket();
     socketRef.current = s;
 
     const onConnect = () => {
@@ -89,51 +96,59 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
       setErr("");
     };
 
-    const onDisconnect = () => {
-      setConnected(false);
-    };
+    const onDisconnect = () => setConnected(false);
 
     const onConnectError = () => {
       setConnected(false);
       setErr(`Server connection failed (${apiBase}). Start the server on port 5175.`);
     };
 
-    const onError = (e) => setErr(e?.message || "Error");
+    const onError = (p) => setErr(String(p?.message || "Error"));
 
-    const onRoomState = (state) => {
-      setRoom(state);
+    const onState = (st) => {
+      setRoom(st);
       setErr("");
     };
 
-    const onStarted = (state) => {
-      setRoom(state);
+    const onStarted = (st) => {
       onEnterGame?.({
-        code: state.code,
-        isHost: state.players?.[0]?.id === s.id,
+        code: st.code,
+        isHost: st.players?.[0]?.id === s.id,
       });
+    };
+
+    const onUploadProgress = (p) => {
+      const done = Number(p?.done || 0);
+      const total = Math.max(1, Number(p?.total || 100));
+      const pct = Math.max(0, Math.min(100, Math.round((done / total) * 100)));
+
+      setProgressLabel(p?.status ? String(p.status) : "Generating questions…");
+      setProgressPct((cur) => Math.max(cur, Math.min(95, Math.max(12, pct))));
     };
 
     s.on("connect", onConnect);
     s.on("disconnect", onDisconnect);
     s.on("connect_error", onConnectError);
 
-    s.on("coop:error", onError);
-    s.on("coop:room_state", onRoomState);
-    s.on("coop:started", onStarted);
+    s.on("onevone:error", onError);
+    s.on("onevone:state", onState);
+    s.on("onevone:started", onStarted);
+    s.on("onevone:upload_progress", onUploadProgress);
 
     if (s.connected) onConnect();
 
     return () => {
       stopGenTimer();
 
-      // keep socket alive for the game screen
+      // IMPORTANT: do NOT disconnect here. We need the same socket in the 1v1 game screen.
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
       s.off("connect_error", onConnectError);
 
-      s.off("coop:error", onError);
-      s.off("coop:room_state", onRoomState);
-      s.off("coop:started", onStarted);
+      s.off("onevone:error", onError);
+      s.off("onevone:state", onState);
+      s.off("onevone:started", onStarted);
+      s.off("onevone:upload_progress", onUploadProgress);
     };
   }, [apiBase, onEnterGame]);
 
@@ -151,7 +166,7 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
     setProgressPct(0);
     setProgressLabel("");
 
-    socketRef.current?.emit("coop:create_room", { name: name.trim(), equipped });
+    socketRef.current?.emit("onevone:create_room", { name: name.trim(), equipped });
   };
 
   const joinRoom = () => {
@@ -159,17 +174,19 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
     if (!connected) return setErr("Not connected to server yet.");
     if (!name.trim()) return setErr("Enter a name.");
     if (!code.trim()) return setErr("Enter a room code.");
-    socketRef.current?.emit("coop:join_room", { code: code.trim(), name: name.trim(), equipped });
+
+    socketRef.current?.emit("onevone:join_room", { code: code.trim(), name: name.trim(), equipped });
   };
 
   const setReady = (v) => {
     if (!connected || !room) return;
-    socketRef.current?.emit("coop:set_ready", { code: room.code, ready: v });
+    socketRef.current?.emit("onevone:set_ready", { code: room.code, ready: v });
   };
 
   const start = () => {
     if (!connected || !room) return;
-    socketRef.current?.emit("coop:start_game", { code: room.code });
+    socketRef.current?.emit("onevone:start_game", { code: room.code });
+    // DO NOT navigate here; server emits "onevone:started" to both players.
   };
 
   const onDropFiles = async (files) => {
@@ -192,7 +209,7 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
       fd.append("file", first);
       fd.append("code", room.code);
 
-      const data = await uploadFormDataWithProgress(`${apiBase}/api/coop/upload`, fd, (pct) => {
+      const data = await uploadFormDataWithProgress(`${apiBase}/api/onevone/upload`, fd, (pct) => {
         setProgressPct(Math.min(10, Math.round(pct * 0.1)));
         setProgressLabel(`Uploading… ${pct}%`);
       });
@@ -208,7 +225,7 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
       setProgressLabel("Saving…");
       setProgressPct(96);
 
-      socketRef.current?.emit("coop:push_questions", { code: room.code, questions });
+      socketRef.current?.emit("onevone:push_questions", { code: room.code, questions });
 
       setProgressLabel("Done");
       setProgressPct(100);
@@ -223,14 +240,19 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
     }
   };
 
+  const everyoneReady = !!room?.players?.length && room.players.length === 2 && room.players.every((p) => !!p.ready);
+  const hasQuestions = Number(room?.questionCount || 0) > 0;
+
   return (
-    <div className="coopLobbyRoot">
-      <video className="coopLobbyBg" src="/assets/menu/bg.mp4" autoPlay loop muted playsInline />
+    <div className="onevoneLobbyRoot">
+      <video className="onevoneLobbyBg" src="/assets/menu/bg.mp4" autoPlay loop muted playsInline />
 
-      <div className="coopLobbyHud">
-        <button className="coopBack" onClick={onBackToMenu}>Back</button>
+      <div className="onevoneHud">
+        <button className="onevoneBack" onClick={onBackToMenu}>
+          Back
+        </button>
 
-        <div className="coopLeftPanel">
+        <div className="onevoneLeftPanel">
           <div className="panelTitle">Host Upload</div>
 
           {!room ? (
@@ -242,53 +264,40 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
               <DropZone onFiles={onDropFiles} disabled={uploadLocked} />
 
               {uploadLocked && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontWeight: 800 }}>
-                    <div style={{ opacity: 0.95 }}>{progressLabel || "Working…"}</div>
-                    <div style={{ opacity: 0.85 }}>{progressPct}%</div>
+                <div className="progressWrap">
+                  <div className="progressTop">
+                    <div className="progressLabel">{progressLabel || "Working…"}</div>
+                    <div className="progressPct">{progressPct}%</div>
                   </div>
-                  <div
-                    style={{
-                      marginTop: 8,
-                      height: 12,
-                      borderRadius: 999,
-                      background: "rgba(255,255,255,0.14)",
-                      overflow: "hidden",
-                      border: "1px solid rgba(255,255,255,0.18)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${progressPct}%`,
-                        background: "rgba(255,210,120,0.85)",
-                        transition: "width 180ms ease",
-                      }}
-                    />
+
+                  <div className="progressBar">
+                    <div className="progressFill" style={{ width: `${progressPct}%` }} />
                   </div>
                 </div>
               )}
 
               {uploadStatus ? <div className="panelSmall">{uploadStatus}</div> : null}
-              {!uploadLocked ? (
-                <div className="panelSmall">Generates 100 questions for this room.</div>
-              ) : null}
+              {!uploadLocked ? <div className="panelSmall">Generates 100 questions for this room.</div> : null}
             </>
           )}
 
           <div className="panelSmall">Supported: PDF, DOCX, PPTX</div>
         </div>
 
-        <div className="coopRightPanel">
-          <div className="panelTitle">Co-op Room</div>
+        <div className="onevoneRightPanel">
+          <div className="panelTitle">1v1 Room</div>
 
           <div className="panelSmall" style={{ marginTop: 0 }}>
             Status: {connected ? "Connected" : "Connecting..."}
           </div>
 
           <div className="modeTabs">
-            <button className={mode === "join" ? "tab active" : "tab"} onClick={() => setMode("join")}>Join</button>
-            <button className={mode === "host" ? "tab active" : "tab"} onClick={() => setMode("host")}>Host</button>
+            <button className={mode === "join" ? "tab active" : "tab"} onClick={() => setMode("join")}>
+              Join
+            </button>
+            <button className={mode === "host" ? "tab active" : "tab"} onClick={() => setMode("host")}>
+              Host
+            </button>
           </div>
 
           <div className="row">
@@ -317,10 +326,12 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
 
           {room && (
             <>
-              <div className="roomCode">Room: <b>{room.code}</b></div>
+              <div className="roomCode">
+                Room: <b>{room.code}</b>
+              </div>
 
               <div className="playerList">
-                {room.players.map((p) => (
+                {(room.players || []).map((p) => (
                   <div className="playerRow" key={p.id}>
                     <div className="playerName">{p.name}</div>
                     <div className={p.ready ? "pill ready" : "pill"}>{p.ready ? "Ready" : "Not Ready"}</div>
@@ -333,10 +344,12 @@ export default function CoopLobby({ onBackToMenu, onEnterGame }) {
                   {me?.ready ? "Unready" : "Ready"}
                 </button>
 
-                <button className="primary" onClick={start} disabled={!connected || !isHost}>
+                <button className="primary" onClick={start} disabled={!connected || !isHost || !everyoneReady || !hasQuestions}>
                   Start
                 </button>
               </div>
+
+              <div className="panelSmall">Match requirements: 2 players ready + questions loaded.</div>
             </>
           )}
 
@@ -356,9 +369,7 @@ function DropZone({ onFiles, disabled }) {
     e.preventDefault();
     setActive(true);
   };
-
   const onDragLeave = () => setActive(false);
-
   const onDrop = (e) => {
     if (disabled) return;
     e.preventDefault();

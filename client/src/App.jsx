@@ -5,9 +5,13 @@ import Shop from "./components/Shop.jsx";
 import CoopLobby from "./components/CoopLobby.jsx";
 import CoopMode from "./components/CoopMode.jsx";
 
+import OneVOneLobby from "./components/OneVOneLobby.jsx";
+import OneVOneMode from "./components/OneVOneMode.jsx";
+
 export default function App() {
-  const [screen, setScreen] = useState("menu"); // "menu" | "endless" | "shop" | "coop_lobby" | "coop_game"
-  const [coopRoom, setCoopRoom] = useState(null); // { code, isHost }
+  const [screen, setScreen] = useState("menu"); 
+  const [coopRoom, setCoopRoom] = useState(null);
+  const [v1Room, setV1Room] = useState(null);
 
   if (screen === "endless") {
     return <EndlessMode onBackToMenu={() => setScreen("menu")} />;
@@ -41,11 +45,36 @@ export default function App() {
     );
   }
 
+  if (screen === "v1_lobby") {
+    return (
+      <OneVOneLobby
+        onBackToMenu={() => setScreen("menu")}
+        onEnterGame={(roomInfo) => {
+          setV1Room(roomInfo);
+          setScreen("v1_game");
+        }}
+      />
+    );
+  }
+
+  if (screen === "v1_game") {
+    return (
+      <OneVOneMode
+        room={v1Room}
+        onBackToMenu={() => {
+          setV1Room(null);
+          setScreen("menu");
+        }}
+      />
+    );
+  }
+
   return (
     <MainMenu
       onStartEndless={() => setScreen("endless")}
       onOpenShop={() => setScreen("shop")}
       onOpenCoop={() => setScreen("coop_lobby")}
+      onOpen1v1={() => setScreen("v1_lobby")}
     />
   );
 }

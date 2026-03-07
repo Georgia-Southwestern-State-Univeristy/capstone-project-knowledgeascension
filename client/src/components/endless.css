@@ -1,16 +1,123 @@
-.endRoot, .endRoot * { box-sizing: border-box; }
+.endRoot, .endRoot * { box-sizing: border-box; } 
 .endRoot{
   position:fixed;
   inset:0;
   overflow:hidden;
   background:#000;
 }
+.qWrap .qText { top: var(--qTextY) !important; }
+
+/* =========================================================
+   MANUAL TUNING VARIABLES
+   - Change these first. Everything pulls from here.
+   ========================================================= */
+:root{
+  /* Stage scaling base */
+  --stageW: 1920px;
+  --stageH: 1080px;
+
+  /* Hero sprite */
+  --heroX: 10px;
+  --heroY: -60px;
+  --heroW: 800px;
+
+  /* Enemy sprite */
+  --enemyX: 500px; /* from right */
+  --enemyY: 100px;
+  --enemyW: 700px;
+
+  /* HUD */
+  --hudX: 20px;
+  --hudY: 18px;
+  --hudFont: 18px;
+
+  --hudCoinSize: 100px;
+
+  /* Menu button */
+  --menuBtnX: 20px;
+  --menuBtnY: 80px;
+
+  /* Music dock */
+  --musicX: 20px;
+  --musicY: 20px; /* from bottom */
+
+  /* =========================================================
+     ENEMY BAR (top-left)
+     ========================================================= */
+  --enemyBarX: 140px;
+  --enemyBarY: -100px;
+  --enemyBarW: 860px;
+
+  /* Enemy name text inside bar */
+  --enemyNameX: 86px;
+  --enemyNameY: 86px;
+  --enemyNameW: 560px;
+  --enemyNameSize: 44px;
+
+  /* Enemy HP fill region inside bar PNG */
+  --enemyFillX: 495px;
+  --enemyFillY: 122px;
+  --enemyFillW: 285px;
+  --enemyFillH: 22px;
+  --enemyFillRadius: 8px;
+
+  /* =========================================================
+     HERO BAR (bottom-right)
+     ========================================================= */
+  --heroBarX: 0px;      /* from right */
+  --heroBarY: 160px;    /* from bottom */
+  --heroBarW: 860px;
+
+  /* Hero name text inside bar */
+  --heroNameX: 86px;
+  --heroNameY: 86px;
+  --heroNameW: 560px;
+  --heroNameSize: 44px;
+
+  /* Hero HP fill region inside bar PNG */
+  --heroFillX: 495px;
+  --heroFillY: 122px;
+  --heroFillW: 285px;
+  --heroFillH: 22px;
+  --heroFillRadius: 8px;
+
+  /* =========================================================
+     QUESTION BOX
+     ========================================================= */
+  --qWrapX: 50%;
+  --qWrapBottom: -300px;
+  --qWrapW: 1800px;
+
+  /* Question text region inside frame */
+  --qTextX: 100px;
+  --qTextY:900px;     /* FIX: lowered from your earlier 500 */
+  --qTextW: 1180px;
+  --qTextH: 185px;
+  --qTextSize: 45px;
+  --qTextLines: 4;
+
+  /* Answer column placement */
+  --ansRight: -75px;
+  --ansW: 520px;
+  --ansH: 92px;
+  --ansPadX: 16px;
+  --ansFont: 30px;
+
+  /* Answer row Y positions */
+  --ansA1Y: 380px;
+  --ansA2Y: 450px;
+  --ansA3Y: 510px;
+  --ansA4Y: 575px;
+
+  /* Coin sprite size */
+  --coinSize: 120px;
+}
 
 /*  Everything below uses pixel positioning for that stage. */
 .endStage{
   position:absolute;
-  width:1920px;
-  height:1080px;
+  width:var(--stageW);
+  height:var(--stageH);
   left:50%;
   top:50%;
   transform-origin:center;
@@ -29,9 +136,9 @@
 /* Hero and Enemy sprite placement */
 .heroSprite{
   position:absolute;
-  left:10px;     /* Manual: move hero left/right */
-  bottom:-60px;     /* Manual: move hero up/down */
-  width:800px;     /* Manual: resize hero */
+  left:var(--heroX);
+  bottom:var(--heroY);
+  width:var(--heroW);
   z-index:5;
   image-rendering:pixelated;
   user-select:none;
@@ -40,9 +147,9 @@
 
 .enemySprite{
   position:absolute;
-  right:500px;     /* Manual: move enemy left/right */
-  top:100px;       /* Manual: move enemy up/down */
-  width:700px;     /* Manual: resize enemy */
+  right:var(--enemyX);
+  top:var(--enemyY);
+  width:var(--enemyW);
   z-index:5;
   image-rendering:pixelated;
   user-select:none;
@@ -54,16 +161,15 @@
 -------------------------------------------------------- */
 .hud{
   position:absolute;
-  left:20px;
-  top:18px;
+  left:var(--hudX);
+  top:var(--hudY);
   z-index:50;
   color:#fff;
-  font-size:18px;
+  font-size:var(--hudFont);
   text-shadow:0 2px 8px rgba(0,0,0,0.85);
   user-select:none;
 }
 
-/* --- Coins display in HUD (icon + number) --- */
 .hudRow{
   display:flex;
   align-items:center;
@@ -71,8 +177,8 @@
 }
 
 .hudCoinIcon{
-  width:100px;     /* Manual: HUD coin icon size */
-  height:100px;    /* Manual: HUD coin icon size */
+  width:var(--hudCoinSize);
+  height:var(--hudCoinSize);
   image-rendering:pixelated;
   user-select:none;
   -webkit-user-drag:none;
@@ -82,7 +188,6 @@
   font-weight:700;
 }
 
-/* +X coin gain popup near HUD */
 .coinPop{
   position:absolute;
   z-index:80;
@@ -103,8 +208,8 @@
 
 .menuBtn{
   position:absolute;
-  left:20px;
-  top:80px;
+  left:var(--menuBtnX);
+  top:var(--menuBtnY);
   z-index:50;
   padding:10px 14px;
   border-radius:10px;
@@ -119,8 +224,8 @@
 -------------------------------------------------------- */
 .musicDock{
   position:absolute;
-  left:20px;       /* Manual: move dock left/right */
-  bottom:20px;     /* Manual: move dock up/down */
+  left:var(--musicX);
+  bottom:var(--musicY);
   z-index:70;
   display:flex;
   align-items:center;
@@ -156,14 +261,18 @@
 
 /* -------------------------------------------------------
    Bars (enemy/hero)
+   IMPORTANT:
+   - The HP fill overlay MUST be positioned relative to its
+     bar container, not the entire screen.
 -------------------------------------------------------- */
 .bar{
   position:absolute;
-  width:860px;     /* Manual: bar PNG display width */
+  width:860px;
   z-index:30;
   user-select:none;
 }
 
+/* Frame png */
 .barFrame{
   width:100%;
   height:auto;
@@ -173,49 +282,77 @@
   -webkit-user-drag:none;
 }
 
+/* Name text */
 .barName{
   position:absolute;
-  left:150px;
-  top:200px;
-  width:450px;
-  font-size:45px;
-  color:#2b1a0a;
-  text-shadow:0 2px 6px #031327bf;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
   pointer-events:none;
   user-select:none;
+  color:#2b1a0a;
+  text-shadow:0 2px 6px rgba(3,19,39,0.75);
+  font-weight:900;
 }
 
-/* HP fill overlay position inside the bar PNGs */
+/* Fill overlay
+   FIX: keep it inside the bar, and use scaleX only (from React).
+*/
 .barFill{
   position:absolute;
-  left:455px;      /* Manual: move fill left/right inside bar PNG */
-  top:250px;       /* Manual: move fill up/down inside bar PNG */
-  width:275px;     /* Manual: length of fill region */
-  height:25px;     /* Manual: thickness of fill region */
-  background:#097000;
   transform-origin:left center;
-  border-radius:8px;
   opacity:0.95;
   pointer-events:none;
 }
 
+/* Enemy bar placement */
 .enemyBar{
-  position:absolute;
-  width:860px;
-  z-index:30;
-  left:140px;      /* Manual: move enemy UI left/right */
-  top:-100px;      /* Manual: move enemy UI up/down */
+  left:var(--enemyBarX);
+  top:var(--enemyBarY);
+  width:var(--enemyBarW);
 }
 
+/* Enemy name */
+.enemyBar .barName{
+  left:var(--enemyNameX);
+  top:var(--enemyNameY);
+  width:var(--enemyNameW);
+  font-size:var(--enemyNameSize);
+}
+
+/* Enemy fill region */
+.enemyBar .barFill{
+  left:var(--enemyFillX);
+  top:var(--enemyFillY);
+  width:var(--enemyFillW);
+  height:var(--enemyFillH);
+  border-radius:var(--enemyFillRadius);
+  background:#097000;
+}
+
+/* Hero bar placement */
 .heroBar{
-  position:absolute;
-  width:860px;
-  z-index:30;
-  right:0px;       /* Manual: move hero UI left/right */
-  bottom:160px;    /* Manual: move hero UI up/down */
+  right:var(--heroBarX);
+  bottom:var(--heroBarY);
+  width:var(--heroBarW);
+}
+
+/* Hero name */
+.heroBar .barName{
+  left:var(--heroNameX);
+  top:var(--heroNameY);
+  width:var(--heroNameW);
+  font-size:var(--heroNameSize);
+}
+
+/* Hero fill region */
+.heroBar .barFill{
+  left:var(--heroFillX);
+  top:var(--heroFillY);
+  width:var(--heroFillW);
+  height:var(--heroFillH);
+  border-radius:var(--heroFillRadius);
+  background:#097000;
 }
 
 /* -------------------------------------------------------
@@ -223,9 +360,9 @@
 -------------------------------------------------------- */
 .qWrap{
   position:absolute;
-  left:50%;
-  bottom:-300px;   /* Manual: lower/raise question box */
-  width:1800px;    /* Manual: resize question box container */
+  left:var(--qWrapX);
+  bottom:var(--qWrapBottom);
+  width:var(--qWrapW);
   transform:translateX(-50%);
   z-index:40;
   user-select:none;
@@ -242,31 +379,31 @@
 
 .qText{
   position:absolute;
-  left:100px;      /* Manual: question text x inside box */
-  top:430px;       /* Manual: question text y inside box */
-  width:1180px;    /* Manual: question text width */
-  height:165px;    /* Manual: question text height */
-  font-size:40px;
+  left:var(--qTextX);
+  top:var(--qTextY);
+  width:var(--qTextW);
+  height:var(--qTextH);
+  font-size:var(--qTextSize);
   color:#111;
   line-height:1.2;
   overflow:hidden;
   display:-webkit-box;
-  -webkit-line-clamp:4;
+  -webkit-line-clamp: var(--qTextLines);
   -webkit-box-orient:vertical;
   pointer-events:none;
   user-select:none;
 }
 
-/* Manual: overall answer column placement */
+/* Answers */
 .ans{
   position:absolute;
-  right:-75px;      /* Manual: move answer column left/right */
-  width:520px;     /* Manual: answer button width */
-  height:92px;     /* Manual: answer button height (one row only) */
+  right:var(--ansRight);
+  width:var(--ansW);
+  height:var(--ansH);
   border:none;
   background:transparent;
   cursor:pointer;
-  padding:0 16px;
+  padding:0 var(--ansPadX);
   text-align:left;
   display:flex;
   align-items:center;
@@ -282,18 +419,17 @@
   overflow:hidden;
   white-space:nowrap;
   text-overflow:ellipsis;
-  font-size:30px;  /* Manual: answer font size */
+  font-size:var(--ansFont);
   color:#ffffff;
   text-shadow:0 2px 6px rgba(0,0,0,0.8);
   pointer-events:none;
   user-select:none;
 }
 
-/* Manual: answer row positions */
-.ans.a1{ top:380px; }
-.ans.a2{ top:450px; }
-.ans.a3{ top:510px; }
-.ans.a4{ top:575px; }
+.ans.a1{ top:var(--ansA1Y); }
+.ans.a2{ top:var(--ansA2Y); }
+.ans.a3{ top:var(--ansA3Y); }
+.ans.a4{ top:var(--ansA4Y); }
 
 .ans:hover{ filter:brightness(1.12); }
 .ans:disabled{ cursor:default; opacity:0.7; }
@@ -301,17 +437,6 @@
 /* -------------------------------------------------------
    Coin Drop Animation (enemy death)
 -------------------------------------------------------- */
-:root{
-  --coinSize: 120px; /* Manual: EDIT THIS to resize the coin drop sprite */
-}
-
-/*
-  Coin now:
-  - pops up from enemy
-  - arcs HARD left toward hero
-  - lands near bottom-left
-  - short total duration
-*/
 .coinDrop{
   position:absolute;
   width:var(--coinSize);
@@ -334,7 +459,6 @@
   100%{ opacity:1; transform: translate(calc(var(--driftX) * 0.12), -90px) rotate(calc(var(--spin) * 0.20)) scale(1.20); }
 }
 
-/* Big arc toward hero bottom-left */
 @keyframes coinArcToHero{
   0%{ transform: translate(calc(var(--driftX) * 0.12), -90px) rotate(calc(var(--spin) * 0.20)) scale(1.20); }
   55%{ transform: translate(calc(var(--driftX) * 0.60), -170px) rotate(calc(var(--spin) * 0.70)) scale(1.26); }
@@ -388,6 +512,122 @@
   border-radius:12px;
   border:1px solid rgba(255,255,255,0.25);
   background:rgba(0,0,0,0.35);
+  color:#fff;
+  cursor:pointer;
+}
+.endRoot, .endRoot * { box-sizing: border-box; }
+.endRoot{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  background:#000;
+}
+
+/*  Everything below uses pixel positioning for that stage. */
+.endStage{
+  position:absolute;
+  width:1920px;
+  height:1080px;
+  left:50%;
+  top:50%;
+  transform-origin:center;
+}
+
+/* Background arena */
+.arenaBg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:0;
+}
+
+/* ---------------------------
+   Endless Upload UI (NEW)
+---------------------------- */
+.endUploadCard{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%);
+  width: 780px;
+  padding: 22px 22px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.75);
+}
+
+.endUploadTitle{
+  font-size: 34px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.endUploadSub{
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 16px;
+}
+
+.endUploadBtn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  cursor: pointer;
+  font-weight: 800;
+  user-select: none;
+}
+
+.endUploadBtn input{
+  display:none;
+}
+
+.endProgWrap{
+  margin-top: 14px;
+}
+
+.endProgLabel{
+  font-size: 14px;
+  opacity: 0.95;
+  margin-bottom: 8px;
+}
+
+.endProgTrack{
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.16);
+}
+
+.endProgFill{
+  height: 100%;
+  width: 0%;
+  background: rgba(255,215,120,0.75);
+}
+
+.endUploadErr{
+  margin-top: 12px;
+  color: #ffb6b6;
+  font-weight: 800;
+}
+
+.endBackBtn{
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
   color:#fff;
   cursor:pointer;
 }

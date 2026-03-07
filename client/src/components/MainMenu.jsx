@@ -3,7 +3,7 @@ import "./menu.css";
 import trackLobby from "../assets/audio/track_lobby.mp3";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop }) {
+export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpen1v1 }) {
   const { loading, username, profile, signup, login, logout } = useAuth();
 
   const [selected, setSelected] = useState("1V1");
@@ -58,11 +58,12 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop }) {
       if (k === "enter") {
         if (selected === "ENDLESS") onStartEndless?.();
         if (selected === "COOP") onOpenCoop?.();
+        if (selected === "1V1") onOpen1v1?.();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, onStartEndless, onOpenCoop]);
+  }, [selected, onStartEndless, onOpenCoop, onOpen1v1]);
 
   const Btn = ({ imgSrc, alt }) => (
     <div className="btnWrap">
@@ -152,7 +153,7 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop }) {
         <button
           className={`imgBtn modeBtn btn1 ${selected === "1V1" ? "selected" : ""}`}
           onMouseEnter={() => setSelected("1V1")}
-          onClick={() => console.log("1v1 later")}
+          onClick={() => onOpen1v1?.()}
         >
           <Btn imgSrc="/assets/menu/btn_1v1.png" alt="1v1" />
         </button>
