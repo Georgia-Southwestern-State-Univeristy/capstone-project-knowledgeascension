@@ -96,12 +96,13 @@ const QUESTIONS = [
   },
 ];
 
+const API_BASE = "http://localhost:4000/api";
+
 export async function seedQuestionsIfNeeded() {
   return true;
 }
 
 export async function getRandomQuestion() {
-  if (!QUESTIONS.length) return null;
-  const q = QUESTIONS[Math.floor(Math.random() * QUESTIONS.length)];
-  return { ...q };
+  const res = await fetch("http://localhost:4000/api/questions/random");
+  return await res.json();
 }
