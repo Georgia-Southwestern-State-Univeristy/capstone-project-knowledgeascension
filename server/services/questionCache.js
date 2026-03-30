@@ -14,6 +14,19 @@ export function getCachedQuestions(key) {
   return entry.data;
 }
 
+export function getCachedQuestions(key) {
+  const entry = roomQuestionCache.get(key);
+
+  if (!entry) return null;
+
+  if (entry.expiresAt < Date.now()) {
+    roomQuestionCache.delete(key);
+    return null;
+  }
+
+  return entry.data;
+}
+
 export function setCachedQuestions(key, data, ttlMs = 5 * 60 * 1000) {
   roomQuestionCache.set(key, {
     data,

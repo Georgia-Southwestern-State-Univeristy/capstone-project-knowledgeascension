@@ -1,3 +1,9 @@
+import {
+  getCachedQuestions,
+  setCachedQuestions,
+  clearCachedQuestions
+} from "./services/questionCache.js";
+
 import "dotenv/config";
 import express from "express";
 import http from "http";
@@ -10,7 +16,12 @@ import mammoth from "mammoth";
 import JSZip from "jszip";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+/* =========================================================
+   Configuration / Environment Variables
+========================================================= */
+
 const PORT = Number(process.env.PORT || 5175);
+
 const GEMINI_API_KEY = String(process.env.GEMINI_API_KEY || "").trim();
 const GEMINI_MODEL = String(process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
 
@@ -31,9 +42,7 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 },
 });
 
-/* =========================================================
-   Shared helpers
-========================================================= */
+/* Shared helpers */
 function makeCode() {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -197,9 +206,9 @@ async function generateQuestionsGemini(text, opts) {
   return out.slice(0, targetCount);
 }
 
-/* =========================================================
-   CO-OP (existing)
-========================================================= */
+
+//CO-OP (existing)
+
 const rooms = new Map();
 
 function roomPublic(room) {
@@ -865,6 +874,34 @@ app.post("/api/endless/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+/* =========================================================
+   Simple in-memory question cache
+========================================================= */
+const questionBankCache = new Map();
+
+function getCachedQuestionBank(key) {
+  const entry = questionBankCache.get(key);
+  if (!entry) return null;
+
+  if (entry.expiresAt < Date.now()) {
+    questionBankCache.delete(key);
+    return null;
+  }
+
+  return entry.data;
+}
+
+function setCachedQuestionBank(key, data, ttlMs = 10 * 60 * 1000) {
+  questionBankCache.set(key, {
+    data,
+    expiresAt: Date.now() + ttlMs,
+  });
+}
+
+function clearCachedQuestionBank(key) {
+  questionBankCache.delete(key);
+}
+
 app.post("/api/onevone/upload", upload.single("file"), async (req, res) => {
   try {
     const code = String(req.body?.code || "").trim().toUpperCase();
@@ -875,11 +912,21 @@ app.post("/api/onevone/upload", upload.single("file"), async (req, res) => {
     const text = await extractAny(req.file);
     if (text.length < 50) return res.status(400).json({ error: "Not enough readable text found in the file." });
 
-    const questions = await generateQuestionsGemini(text, {
-      targetCount: GEMINI_TARGET_COUNT,
-      batchSize: GEMINI_BATCH_SIZE,
-      onProgress: (p) => io.to(code).emit("onevone:upload_progress", p),
-    });
+    const cacheKey = `coop:${code}:${req.file.originalname}`;
+
+const cached = getCachedQuestions(cacheKey);
+if (cached) {
+  return res.json({ questions: cached, source: "cache" });
+}
+
+const questions = await generateQuestionsGemini(text, {
+  targetCount: GEMINI_TARGET_COUNT,
+  batchSize: GEMINI_BATCH_SIZE,
+});
+
+setCachedQuestions(cacheKey, questions);
+
+return res.json({ questions, source: "gemini" });
 
     return res.json({ questions });
   } catch (e) {
