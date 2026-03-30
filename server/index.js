@@ -833,9 +833,8 @@ io.on("connection", (socket) => {
   });
 });
 
-/* =========================================================
-   Upload endpoints
-========================================================= */
+//Upload endpoints
+
 app.post("/api/coop/upload", upload.single("file"), async (req, res) => {
   try {
     const code = String(req.body?.code || "").trim().toUpperCase();
@@ -874,9 +873,8 @@ app.post("/api/endless/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-/* =========================================================
-   Simple in-memory question cache
-========================================================= */
+//Simple in-memory question cache
+
 const questionBankCache = new Map();
 
 function getCachedQuestionBank(key) {
