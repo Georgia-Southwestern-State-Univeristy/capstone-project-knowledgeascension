@@ -1,14 +1,28 @@
 function safeLower(v) {
   return String(v || "").trim().toLowerCase();
 }
+async function todayKey() { 
+  try {
+    const response = await fetch("https://timeapi.io/api/Time/current/zone?timeZone=UTC");
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
-function todayKey() {
+    const data = await response.json();
+    console.log(data.year + "-" + data.month + "-" + data.day);
+    return `${data.year}-${data.month}-${data.day}`;
+  } catch (error) {
+    console.error("Error fetching time:", error);
+  }
+}
+/*function todayKey() {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
-}
+}*/
 
 function hashString(str) {
   let h = 1779033703 ^ str.length;
@@ -132,12 +146,11 @@ const TASK_TEMPLATES = [
   { id: "mix_2", stat: "enemyKills", label: (n) => `Go on a streak of ${n} enemy kills`, min: 6, max: 14, rewardMin: 22, rewardMax: 36 },
 ];
 
-function ensureDailyTaskPack(username) {
+async function ensureDailyTaskPack(username) { //changed to async.
   const user = safeLower(username);
-  const today = todayKey();
+  const today = await todayKey(); //changed to await
   const existing = readJson(tasksKey(user), null);
   const stats = getDailyStats(user);
-
   if (existing?.date === today && Array.isArray(existing?.tasks)) {
     return existing;
   }
@@ -173,9 +186,9 @@ function ensureDailyTaskPack(username) {
   return pack;
 }
 
-export function getDailyTaskPack(username) {
+export async function getDailyTaskPack(username) { //changed to async
   const user = safeLower(username);
-  const pack = ensureDailyTaskPack(user);
+  const pack = await ensureDailyTaskPack(user); //changeed to await
   const stats = getDailyStats(user);
 
   const tasks = pack.tasks.map((task) => {
@@ -201,9 +214,9 @@ export function getDailyTaskPack(username) {
   };
 }
 
-export function claimDailyTask(username, instanceId) {
+export async function claimDailyTask(username, instanceId) { //changed to async
   const user = safeLower(username);
-  const pack = ensureDailyTaskPack(user);
+  const pack = await ensureDailyTaskPack(user); //changed to await
   const stats = getDailyStats(user);
 
   const idx = pack.tasks.findIndex((t) => t.instanceId === instanceId);
