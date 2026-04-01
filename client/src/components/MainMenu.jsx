@@ -3,20 +3,32 @@ import "./menu.css";
 import trackLobby from "../assets/audio/track_lobby.mp3";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpen1v1 }) {
+export default function MainMenu({
+  onStartEndless,
+  onOpenShop,
+  onOpenCoop,
+  onOpen1v1,
+  onOpenDailyTasks,
+}) {
   const { loading, username, profile, signup, login, logout } = useAuth();
 
   const [selected, setSelected] = useState("1V1");
 
   const [scale, setScale] = useState(1);
   useEffect(() => {
-    const W = 1920, H = 1080;
-    const update = () => setScale(Math.min(1, Math.min(window.innerWidth / W, window.innerHeight / H)));
+    const W = 1920;
+    const H = 1080;
+    const update = () =>
+      setScale(Math.min(1, Math.min(window.innerWidth / W, window.innerHeight / H)));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  const stageStyle = useMemo(() => ({ transform: `translate(-50%, -50%) scale(${scale})` }), [scale]);
+
+  const stageStyle = useMemo(
+    () => ({ transform: `translate(-50%, -50%) scale(${scale})` }),
+    [scale]
+  );
 
   const audioRef = useRef(null);
   const [musicOn, setMusicOn] = useState(false);
@@ -27,8 +39,10 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpe
     a.loop = true;
     a.volume = volume;
     audioRef.current = a;
-    return () => { a.pause(); audioRef.current = null; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      a.pause();
+      audioRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -38,7 +52,12 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpe
   const startMusic = async () => {
     const a = audioRef.current;
     if (!a) return;
-    try { await a.play(); setMusicOn(true); } catch { setMusicOn(false); }
+    try {
+      await a.play();
+      setMusicOn(true);
+    } catch {
+      setMusicOn(false);
+    }
   };
 
   const stopMusic = () => {
@@ -53,14 +72,22 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpe
     const order = ["1V1", "COOP", "ENDLESS"];
     const onKey = (e) => {
       const k = (e.key || "").toLowerCase();
-      if (k === "arrowdown" || k === "s") setSelected(cur => order[(order.indexOf(cur) + 1) % order.length]);
-      if (k === "arrowup" || k === "w") setSelected(cur => order[(order.indexOf(cur) - 1 + order.length) % order.length]);
+
+      if (k === "arrowdown" || k === "s") {
+        setSelected((cur) => order[(order.indexOf(cur) + 1) % order.length]);
+      }
+
+      if (k === "arrowup" || k === "w") {
+        setSelected((cur) => order[(order.indexOf(cur) - 1 + order.length) % order.length]);
+      }
+
       if (k === "enter") {
         if (selected === "ENDLESS") onStartEndless?.();
         if (selected === "COOP") onOpenCoop?.();
         if (selected === "1V1") onOpen1v1?.();
       }
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, onStartEndless, onOpenCoop, onOpen1v1]);
@@ -134,7 +161,10 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpe
 
               <button
                 className="loginLink"
-                onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setMsg(""); }}
+                onClick={() => {
+                  setMode(mode === "signup" ? "login" : "signup");
+                  setMsg("");
+                }}
               >
                 {mode === "signup" ? "Have an account? Login" : "New? Create account"}
               </button>
@@ -144,10 +174,25 @@ export default function MainMenu({ onStartEndless, onOpenShop, onOpenCoop, onOpe
           )}
         </div>
 
-        <img className="menuTitle" src="/assets/menu/title.png" alt="Knowledge Ascension" draggable="false" />
+        <img
+          className="menuTitle"
+          src="/assets/menu/title.png"
+          alt="Knowledge Ascension"
+          draggable="false"
+        />
 
         <button className="imgBtn shopBtn" onClick={() => onOpenShop?.()}>
           <Btn imgSrc="/assets/menu/btn_shop.png" alt="Shop" />
+        </button>
+
+        <button
+          className="imgBtn dailyBtn"
+          onClick={() => onOpenDailyTasks?.()}
+        >
+          <div className="btnWrap dailyBtnWrap">
+            <div className="goldGlow" />
+            <div className="dailyBtnPlate">Daily Tasks</div>
+          </div>
         </button>
 
         <button

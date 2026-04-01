@@ -1,8 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./coop.css";
+import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { CHARACTERS } from "../db/characters";
-import { getCoopSocket } from "../net/coopSocket.js";
+import { recordDailyStat } from "../game/dailyTasks.js";
+
+function getCoopServerBase() {
+  const host = window.location.hostname;
+  return `http://${host}:5175`;
+}
 
 function folderForEquippedId(id) {
   const key = String(id || "knight").toLowerCase();
@@ -11,7 +17,7 @@ function folderForEquippedId(id) {
 }
 
 export default function CoopMode({ room, onBackToMenu }) {
-  const { addCoins } = useAuth();
+  const { username, addCoins } = useAuth();
 
   const [state, setState] = useState(null);
   const [socketId, setSocketId] = useState("");
@@ -24,9 +30,13 @@ export default function CoopMode({ room, onBackToMenu }) {
 
   const prevBossHpRef = useRef(null);
   const prevHpMapRef = useRef({});
+  const startedTrackedRef = useRef(false);
+  const winTrackedRef = useRef(false);
 
   const socketRef = useRef(null);
-  const roomCode = useMemo(() => String(room?.code || "").toUpperCase(), [room?.code]);
+  const apiBase = useMemo(() => getCoopServerBase(), []);
+
+  const roomCode = String(room?.code || "").toUpperCase();
 
   const quakeBoss = () => {
     setBossQuake(true);
@@ -43,15 +53,12 @@ export default function CoopMode({ room, onBackToMenu }) {
   useEffect(() => {
     if (!roomCode) return;
 
-    const s = getCoopSocket();
+    const s = io(apiBase, { transports: ["websocket"] });
     socketRef.current = s;
 
-    const onConnect = () => {
-      setSocketId(s.id);
-      s.emit("coop:request_question", { code: roomCode });
-    };
+    s.on("connect", () => setSocketId(s.id));
 
-    const onRoomState = (st) => {
+    s.on("coop:room_state", (st) => {
       const bossHpNow = Number(st?.bossHp ?? 0);
       const bossHpPrev = prevBossHpRef.current;
 
@@ -60,13 +67,13 @@ export default function CoopMode({ room, onBackToMenu }) {
       }
       prevBossHpRef.current = bossHpNow;
 
-      const prevHpMap = { ...(prevHpMapRef.current || {}) };
+      const prevHpMap = prevHpMapRef.current || {};
       const curPlayers = Array.isArray(st?.players) ? st.players : [];
 
       for (const p of curPlayers) {
         const prev = Number(prevHpMap[p.id] ?? p.hp);
         const now = Number(p.hp ?? 0);
-        if (now < prev) {
+        if (prev != null && now < prev) {
           quakePlayer(p.id);
         }
         prevHpMap[p.id] = now;
@@ -74,68 +81,85 @@ export default function CoopMode({ room, onBackToMenu }) {
 
       prevHpMapRef.current = prevHpMap;
       setState(st);
-    };
 
-    const onQuestion = (payload) => {
-      setQ(payload?.q || null);
-    };
+      if (st?.started && !startedTrackedRef.current) {
+        startedTrackedRef.current = true;
+        winTrackedRef.current = false;
 
-    const onStarted = (st) => {
+        if (username) {
+          recordDailyStat(username, "coopMatches", 1);
+        }
+      }
+
+      if (!st?.started && !endReason) {
+        startedTrackedRef.current = false;
+      }
+    });
+
+    s.on("coop:question", (payload) => setQ(payload?.q || null));
+
+    s.on("coop:started", (st) => {
       setEndReason("");
       setState(st);
-      s.emit("coop:request_question", { code: roomCode });
-    };
+      setQ(st?.curQuestion || null);
+      startedTrackedRef.current = true;
+      winTrackedRef.current = false;
 
-    const onHit = async (payload) => {
+      if (username) {
+        recordDailyStat(username, "coopMatches", 1);
+      }
+    });
+
+    s.on("coop:hit", async (payload) => {
       if (!payload) return;
 
       quakeBoss();
 
-      if (payload.playerId === s.id && payload.coinDrop > 0) {
-        try {
-          await addCoins(payload.coinDrop);
-        } catch {}
+      if (payload.playerId === s.id) {
+        if (username) {
+          recordDailyStat(username, "correctAnswers", 1);
+
+          if (payload.coinDrop > 0) {
+            recordDailyStat(username, "coinsEarned", payload.coinDrop);
+          }
+        }
+
+        if (payload.coinDrop > 0) {
+          try {
+            await addCoins(payload.coinDrop);
+          } catch {}
+        }
       }
-    };
+    });
 
-    const onPlayerHurt = (payload) => {
-      if (payload?.playerId) {
-        quakePlayer(payload.playerId);
+    s.on("coop:player_hurt", (payload) => {
+      if (payload?.playerId) quakePlayer(payload.playerId);
+    });
+
+    s.on("coop:ended", (payload) => {
+      const reason = String(payload?.reason || "ended");
+      setEndReason(reason);
+
+      if (reason === "win" && !winTrackedRef.current) {
+        winTrackedRef.current = true;
+        if (username) {
+          recordDailyStat(username, "coopWins", 1);
+        }
       }
-    };
-
-    const onEnded = (payload) => {
-      setEndReason(String(payload?.reason || "ended"));
-    };
-
-    s.on("connect", onConnect);
-    s.on("coop:room_state", onRoomState);
-    s.on("coop:question", onQuestion);
-    s.on("coop:started", onStarted);
-    s.on("coop:hit", onHit);
-    s.on("coop:player_hurt", onPlayerHurt);
-    s.on("coop:ended", onEnded);
-
-    if (s.connected) onConnect();
+    });
 
     return () => {
-      s.off("connect", onConnect);
-      s.off("coop:room_state", onRoomState);
-      s.off("coop:question", onQuestion);
-      s.off("coop:started", onStarted);
-      s.off("coop:hit", onHit);
-      s.off("coop:player_hurt", onPlayerHurt);
-      s.off("coop:ended", onEnded);
-
+      try { s.disconnect(); } catch {}
       socketRef.current = null;
     };
-  }, [roomCode, addCoins]);
+  }, [apiBase, roomCode, addCoins, username, endReason]);
 
   const me = state?.players?.find((p) => p.id === socketId);
   const bossHp = Number(state?.bossHp || 0);
   const bossHpMax = 5000;
   const timerMs = Number(state?.timerMs || 0);
   const timerMax = 5 * 60 * 1000;
+
   const started = !!state?.started;
 
   useEffect(() => {
@@ -164,7 +188,6 @@ export default function CoopMode({ room, onBackToMenu }) {
   return (
     <div className="coopRoot">
       <img className="coopBg" src="/assets/arenas/boss_stage.png" alt="Boss Arena" draggable="false" />
-
       <div className="coopStage">
         <button className="coopExit" onClick={onBackToMenu}>Main Menu</button>
 
@@ -241,7 +264,7 @@ export default function CoopMode({ room, onBackToMenu }) {
               </div>
             ) : !q ? (
               <div className="qCenter">
-                <div className="qTitle">Loading your question…</div>
+                <div className="qTitle">Loading your questions…</div>
                 <div className="qSub">You’ll get your own random stream.</div>
               </div>
             ) : (

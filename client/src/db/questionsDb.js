@@ -27,6 +27,12 @@ function normalizeQuestion(q) {
   return { text, a, b, c, d, correct };
 }
 
+// Keeps older imports from crashing.
+// Your current system does not need seeding from a static list anymore.
+export async function seedQuestionsIfNeeded() {
+  return true;
+}
+
 export function clearRunBank() {
   RUN_BANK = [];
 }

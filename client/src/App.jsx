@@ -8,8 +8,10 @@ import CoopMode from "./components/CoopMode.jsx";
 import OneVOneLobby from "./components/OneVOneLobby.jsx";
 import OneVOneMode from "./components/OneVOneMode.jsx";
 
+import DailyTasks from "./components/DailyTasks.jsx";
+
 export default function App() {
-  const [screen, setScreen] = useState("menu"); 
+  const [screen, setScreen] = useState("menu");
   const [coopRoom, setCoopRoom] = useState(null);
   const [v1Room, setV1Room] = useState(null);
 
@@ -19,6 +21,10 @@ export default function App() {
 
   if (screen === "shop") {
     return <Shop onBackToMenu={() => setScreen("menu")} />;
+  }
+
+  if (screen === "daily_tasks") {
+    return <DailyTasks onBackToMenu={() => setScreen("menu")} />;
   }
 
   if (screen === "coop_lobby") {
@@ -75,6 +81,7 @@ export default function App() {
       onOpenShop={() => setScreen("shop")}
       onOpenCoop={() => setScreen("coop_lobby")}
       onOpen1v1={() => setScreen("v1_lobby")}
+      onOpenDailyTasks={() => setScreen("daily_tasks")}
     />
   );
 }

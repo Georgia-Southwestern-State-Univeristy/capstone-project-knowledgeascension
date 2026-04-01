@@ -1,8 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./onevone.css";
+import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { getFolderNameFromId } from "../db/characters";
-import { getOneVOneSocket } from "../net/onevoneSocket.js";
+import { recordDailyStat } from "../game/dailyTasks.js";
+
+function getServerBase() {
+  const host = window.location.hostname;
+  return `http://${host}:5175`;
+}
 
 function safeLower(v) {
   return String(v || "").trim().toLowerCase();
@@ -11,6 +17,7 @@ function safeLower(v) {
 export default function OneVOneMode({ room, onBackToMenu }) {
   const { profile, addCoins, username } = useAuth();
 
+  const apiBase = useMemo(() => getServerBase(), []);
   const socketRef = useRef(null);
 
   const [socketId, setSocketId] = useState("");
@@ -22,6 +29,8 @@ export default function OneVOneMode({ room, onBackToMenu }) {
   const [enemyQuake, setEnemyQuake] = useState(false);
 
   const prevHpRef = useRef({ me: null, enemy: null });
+  const startedTrackedRef = useRef(false);
+  const winTrackedRef = useRef(false);
 
   const roomCode = String(room?.code || "").toUpperCase();
   const equipped = safeLower(profile?.equippedCharacter || "knight");
@@ -29,18 +38,15 @@ export default function OneVOneMode({ room, onBackToMenu }) {
   useEffect(() => {
     if (!roomCode) return;
 
-    const s = getOneVOneSocket();
+    const s = io(apiBase, { transports: ["websocket"] });
     socketRef.current = s;
 
-    const onConnect = () => {
+    s.on("connect", () => {
       setSocketId(s.id);
       s.emit("onevone:update_equipped", { code: roomCode, equipped });
+    });
 
-      // If we navigated in after the host started, request the current question for THIS player.
-      s.emit("onevone:request_question", { code: roomCode });
-    };
-
-    const onState = (st) => {
+    s.on("onevone:state", (st) => {
       setState(st);
 
       const me = st?.players?.find((p) => p.id === s.id);
@@ -55,69 +61,69 @@ export default function OneVOneMode({ room, onBackToMenu }) {
         setMeQuake(true);
         window.setTimeout(() => setMeQuake(false), 220);
       }
+
       if (prev.enemy != null && enHp != null && enHp < prev.enemy) {
         setEnemyQuake(true);
         window.setTimeout(() => setEnemyQuake(false), 220);
+
+        if (username && st?.started) {
+          recordDailyStat(username, "correctAnswers", 1);
+        }
       }
 
       prevHpRef.current = { me: meHp, enemy: enHp };
-    };
 
-    const onQuestion = (payload) => {
-      setQ(payload?.q || null);
-    };
+      if (st?.started && !startedTrackedRef.current) {
+        startedTrackedRef.current = true;
+        winTrackedRef.current = false;
 
-    const onLoot = async (payload) => {
+        if (username) {
+          recordDailyStat(username, "onevoneMatches", 1);
+        }
+      }
+
+      if (!st?.started && !endReason) {
+        startedTrackedRef.current = false;
+      }
+    });
+
+    s.on("onevone:question", (payload) => setQ(payload?.q || null));
+
+    s.on("onevone:loot", async (payload) => {
       const amount = Math.max(0, Number(payload?.amount || 0));
       if (!amount) return;
+
+      if (username) {
+        recordDailyStat(username, "coinsEarned", amount);
+      }
+
       try {
         await addCoins(amount);
       } catch {}
-    };
+    });
 
-    const onEnded = async (payload) => {
-      setEndReason(String(payload?.reason || "ended"));
+    s.on("onevone:ended", async (payload) => {
+      const reason = String(payload?.reason || "ended");
+      setEndReason(reason);
 
-      // winner gets 50 coins
       if (payload?.winner === s.id) {
+        if (!winTrackedRef.current && username) {
+          winTrackedRef.current = true;
+          recordDailyStat(username, "onevoneWins", 1);
+          recordDailyStat(username, "coinsEarned", 50);
+        }
+
         try {
           await addCoins(50);
         } catch {}
       }
-    };
-
-    const onDisconnect = () => {
-      // keep UI; socket reconnect will re-request question on connect
-    };
-
-    const onError = () => {
-      // errors are already handled in lobby; game can stay quiet
-    };
-
-    s.on("connect", onConnect);
-    s.on("disconnect", onDisconnect);
-
-    s.on("onevone:error", onError);
-    s.on("onevone:state", onState);
-    s.on("onevone:question", onQuestion);
-    s.on("onevone:loot", onLoot);
-    s.on("onevone:ended", onEnded);
-
-    if (s.connected) onConnect();
+    });
 
     return () => {
-      s.off("connect", onConnect);
-      s.off("disconnect", onDisconnect);
-
-      s.off("onevone:error", onError);
-      s.off("onevone:state", onState);
-      s.off("onevone:question", onQuestion);
-      s.off("onevone:loot", onLoot);
-      s.off("onevone:ended", onEnded);
-
+      try { s.disconnect(); } catch {}
       socketRef.current = null;
     };
-  }, [roomCode, equipped, addCoins]);
+  }, [apiBase, roomCode, equipped, addCoins, username, endReason]);
 
   const started = !!state?.started;
 
@@ -151,9 +157,7 @@ export default function OneVOneMode({ room, onBackToMenu }) {
     <div className="v1GameRoot">
       <img className="v1Arena" src="/assets/arenas/forest.png" alt="" draggable="false" />
 
-      <button className="v1Exit" onClick={onBackToMenu}>
-        Main Menu
-      </button>
+      <button className="v1Exit" onClick={onBackToMenu}>Main Menu</button>
 
       <div className="v1Hud">
         <div className="v1HudBlock">
@@ -161,9 +165,7 @@ export default function OneVOneMode({ room, onBackToMenu }) {
           <div className="v1HudBar">
             <div className="v1HudFill" style={{ width: pct(enHp, enHpMax) }} />
           </div>
-          <div className="v1HudNum">
-            {enHp} / {enHpMax}
-          </div>
+          <div className="v1HudNum">{enHp} / {enHpMax}</div>
         </div>
 
         <div className="v1HudBlock me">
@@ -171,9 +173,7 @@ export default function OneVOneMode({ room, onBackToMenu }) {
           <div className="v1HudBar">
             <div className="v1HudFill" style={{ width: pct(myHp, myHpMax) }} />
           </div>
-          <div className="v1HudNum">
-            {myHp} / {myHpMax}
-          </div>
+          <div className="v1HudNum">{myHp} / {myHpMax}</div>
         </div>
       </div>
 
@@ -184,7 +184,6 @@ export default function OneVOneMode({ room, onBackToMenu }) {
 
       <div className="v1QuestionHud">
         <img className="v1QFrame" src="/assets/ui/question_box.png" alt="" draggable="false" />
-
         <div className="v1QInner">
           {!started ? (
             <div className="v1Center">
@@ -198,26 +197,18 @@ export default function OneVOneMode({ room, onBackToMenu }) {
             </div>
           ) : !q ? (
             <div className="v1Center">
-              <div className="v1Title">Loading your question…</div>
-              <div className="v1Sub">If it takes long, host may not have uploaded yet.</div>
+              <div className="v1Title">Loading your questions…</div>
+              <div className="v1Sub">You and your opponent have separate questions.</div>
             </div>
           ) : (
             <>
               <div className="v1QText">{q.text}</div>
 
               <div className="v1AnsCol">
-                <button className="v1Ans" onClick={() => sendAnswer("a")}>
-                  A) {q.a}
-                </button>
-                <button className="v1Ans" onClick={() => sendAnswer("b")}>
-                  B) {q.b}
-                </button>
-                <button className="v1Ans" onClick={() => sendAnswer("c")}>
-                  C) {q.c}
-                </button>
-                <button className="v1Ans" onClick={() => sendAnswer("d")}>
-                  D) {q.d}
-                </button>
+                <button className="v1Ans" onClick={() => sendAnswer("a")}>A) {q.a}</button>
+                <button className="v1Ans" onClick={() => sendAnswer("b")}>B) {q.b}</button>
+                <button className="v1Ans" onClick={() => sendAnswer("c")}>C) {q.c}</button>
+                <button className="v1Ans" onClick={() => sendAnswer("d")}>D) {q.d}</button>
               </div>
             </>
           )}
