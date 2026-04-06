@@ -1,5 +1,5 @@
 /* ================================
-   FULLSCREEN MENU (no scroll)
+   FULLSCREEN MENU
 ================================ */
 .menuRoot{
   position: fixed;
@@ -11,7 +11,7 @@
 }
 
 .menuBg{
-  position:absolute;
+  position:fixed;
   inset:0;
   width:100%;
   height:100%;
@@ -58,7 +58,7 @@
 }
 
 /* ================================
-   ✨ FEATHERED GOLD GLOW
+   âœ¨ FEATHERED GOLD GLOW
 ================================ */
 .goldGlow{
   position:absolute;
@@ -273,4 +273,153 @@
   margin-top:8px;
   font-size:13px;
   opacity:0.95;
+}
+
+.tabletLayout{
+  width:1024px;
+  height:1366px;
+}
+
+.tabletLayout .loginPanel{
+  left:42px;
+  top:42px;
+  width:270px;
+}
+
+.tabletLayout .menuTitle{
+  top:230px;
+  width:620px;
+}
+
+.tabletLayout .shopBtn{
+  top:90px;
+  right:56px;
+  width:150px;
+}
+
+.tabletLayout .dailyBtn{
+  top:210px;
+  right:42px;
+  width:200px;
+}
+
+.tabletLayout .dailyBtnPlate{
+  min-height:66px;
+  font-size:26px;
+}
+
+.tabletLayout .modeBtn{
+  width:430px;
+}
+
+.tabletLayout .btn1{ top:610px; }
+.tabletLayout .btn2{ top:840px; }
+.tabletLayout .btn3{ top:1070px; }
+
+.tabletLayout .musicPanel{
+  left:42px;
+  bottom:42px;
+  padding:12px 14px;
+}
+
+.tabletLayout .musicPanel input{
+  width:170px;
+}
+
+.phoneLayout{
+  width:430px;
+  height:932px;
+}
+
+.phoneLayout .loginPanel{
+  left:12px;
+  top:74px;
+  width:110px;
+  padding:8px;
+}
+
+.phoneLayout .loginTitle{
+  font-size:12px;
+  margin-bottom:4px;
+}
+
+.phoneLayout .loginRow{
+  font-size:9px;
+  margin-bottom:2px;
+}
+
+.phoneLayout .loginInput,
+.phoneLayout .loginBtn,
+.phoneLayout .loginLink{
+  font-size:10px;
+}
+
+.phoneLayout .loginInput{
+  padding:5px 6px;
+  margin-bottom:4px;
+}
+
+.phoneLayout .loginBtn{
+  padding:5px 7px;
+}
+
+.phoneLayout .loginLink{
+  padding:4px 5px;
+}
+
+.phoneLayout .loginMsg{
+  margin-top:4px;
+  font-size:9px;
+}
+
+.phoneLayout .menuTitle{
+  top:226px;
+  width:220px;
+}
+
+.phoneLayout .shopBtn{
+  top:56px;
+  right:10px;
+  width:98px;
+}
+
+.phoneLayout .dailyBtn{
+  top:122px;
+  right:10px;
+  width:88px;
+}
+
+.phoneLayout .modeBtn{
+  width:292px;
+}
+
+.phoneLayout .btn1{ top:360px; }
+.phoneLayout .btn2{ top:500px; }
+.phoneLayout .btn3{ top:640px; }
+
+.phoneLayout .dailyBtnPlate{
+  min-height:44px;
+  padding:6px 7px;
+  border-radius:10px;
+  font-size:11px;
+  line-height:1.1;
+  text-align:center;
+}
+
+.phoneLayout .musicPanel{
+  left:6px;
+  bottom:22px;
+  transform:none;
+  width:220px;
+  padding:8px 10px;
+  justify-content:flex-start;
+  flex-wrap:wrap;
+}
+
+.phoneLayout .musicPanel button{
+  padding:7px 9px;
+}
+
+.phoneLayout .musicPanel input{
+  width:110px;
 }
