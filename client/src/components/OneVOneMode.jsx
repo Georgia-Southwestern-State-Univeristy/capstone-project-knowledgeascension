@@ -4,6 +4,11 @@ import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { getFolderNameFromId } from "../db/characters";
 import { recordDailyStat } from "../game/dailyTasks.js";
+import AnimatedCharacter from "./AnimatedCharacter.jsx";
+
+const UI = {
+  YOU_DIED: "/assets/ui/you_died.png",
+};
 
 function getServerBase() {
   const host = window.location.hostname;
@@ -27,13 +32,35 @@ export default function OneVOneMode({ room, onBackToMenu }) {
 
   const [meQuake, setMeQuake] = useState(false);
   const [enemyQuake, setEnemyQuake] = useState(false);
+  const [meAction, setMeAction] = useState("idle");
+  const [enemyAction, setEnemyAction] = useState("idle");
+  const [coinsEarned, setCoinsEarned] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
 
   const prevHpRef = useRef({ me: null, enemy: null });
   const startedTrackedRef = useRef(false);
   const winTrackedRef = useRef(false);
+  const meAttackTimerRef = useRef(null);
+  const enemyAttackTimerRef = useRef(null);
 
   const roomCode = String(room?.code || "").toUpperCase();
   const equipped = safeLower(profile?.equippedCharacter || "knight");
+
+  const triggerMeAttack = () => {
+    if (meAttackTimerRef.current) clearTimeout(meAttackTimerRef.current);
+    setMeAction("attack");
+    meAttackTimerRef.current = setTimeout(() => {
+      setMeAction("idle");
+    }, 420);
+  };
+
+  const triggerEnemyAttack = () => {
+    if (enemyAttackTimerRef.current) clearTimeout(enemyAttackTimerRef.current);
+    setEnemyAction("attack");
+    enemyAttackTimerRef.current = setTimeout(() => {
+      setEnemyAction("idle");
+    }, 420);
+  };
 
   useEffect(() => {
     if (!roomCode) return;
@@ -59,12 +86,16 @@ export default function OneVOneMode({ room, onBackToMenu }) {
 
       if (prev.me != null && meHp != null && meHp < prev.me) {
         setMeQuake(true);
+        triggerEnemyAttack();
         window.setTimeout(() => setMeQuake(false), 220);
       }
 
       if (prev.enemy != null && enHp != null && enHp < prev.enemy) {
         setEnemyQuake(true);
+        triggerMeAttack();
         window.setTimeout(() => setEnemyQuake(false), 220);
+
+        setCorrectCount((v) => v + 1);
 
         if (username && st?.started) {
           recordDailyStat(username, "correctAnswers", 1);
@@ -76,6 +107,8 @@ export default function OneVOneMode({ room, onBackToMenu }) {
       if (st?.started && !startedTrackedRef.current) {
         startedTrackedRef.current = true;
         winTrackedRef.current = false;
+        setCoinsEarned(0);
+        setCorrectCount(0);
 
         if (username) {
           recordDailyStat(username, "onevoneMatches", 1);
@@ -92,6 +125,8 @@ export default function OneVOneMode({ room, onBackToMenu }) {
     s.on("onevone:loot", async (payload) => {
       const amount = Math.max(0, Number(payload?.amount || 0));
       if (!amount) return;
+
+      setCoinsEarned((v) => v + amount);
 
       if (username) {
         recordDailyStat(username, "coinsEarned", amount);
@@ -113,6 +148,8 @@ export default function OneVOneMode({ room, onBackToMenu }) {
           recordDailyStat(username, "coinsEarned", 50);
         }
 
+        setCoinsEarned((v) => v + 50);
+
         try {
           await addCoins(50);
         } catch {}
@@ -120,6 +157,8 @@ export default function OneVOneMode({ room, onBackToMenu }) {
     });
 
     return () => {
+      if (meAttackTimerRef.current) clearTimeout(meAttackTimerRef.current);
+      if (enemyAttackTimerRef.current) clearTimeout(enemyAttackTimerRef.current);
       try { s.disconnect(); } catch {}
       socketRef.current = null;
     };
@@ -132,9 +171,6 @@ export default function OneVOneMode({ room, onBackToMenu }) {
 
   const myFolder = getFolderNameFromId(me?.equipped || equipped);
   const enemyFolder = getFolderNameFromId(enemy?.equipped || "knight");
-
-  const myBack = `/assets/characters/${myFolder}/back.png`;
-  const enemyFront = `/assets/characters/${enemyFolder}/front.png`;
 
   const sendAnswer = (picked) => {
     if (!started || endReason) return;
@@ -152,6 +188,29 @@ export default function OneVOneMode({ room, onBackToMenu }) {
 
   const enHp = Number(enemy?.hp ?? 0);
   const enHpMax = Number(enemy?.hpMax ?? 1);
+
+  if (endReason) {
+    return (
+      <div className="v1GameRoot">
+        <img className="v1Arena" src="/assets/arenas/forest.png" alt="" draggable="false" />
+
+        <div className="deathOverlay v1EndOverlay">
+          <img className="youDied" src={UI.YOU_DIED} alt="You Died" draggable="false" />
+
+          <div className="deathStats">
+            <div><b>Result:</b> {endText(endReason, socketId, state)}</div>
+            <div><b>Correct Answers:</b> {correctCount}</div>
+            <div><b>Coins Earned:</b> {coinsEarned}</div>
+            <div><b>Saved To Account:</b> {username ? "Yes" : "No (not logged in)"}</div>
+          </div>
+
+          <div className="deathButtons">
+            <button onClick={onBackToMenu}>Menu</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="v1GameRoot">
@@ -178,27 +237,38 @@ export default function OneVOneMode({ room, onBackToMenu }) {
       </div>
 
       <div className="v1Sprites">
-        <img className={enemyQuake ? "v1Enemy quake" : "v1Enemy"} src={enemyFront} alt="Enemy" draggable="false" />
-        <img className={meQuake ? "v1Me quake" : "v1Me"} src={myBack} alt="You" draggable="false" />
+        <AnimatedCharacter
+          folderName={enemyFolder}
+          facing="front"
+          action={enemyAction}
+          className={enemyQuake ? "v1Enemy quake" : "v1Enemy"}
+          alt="Enemy"
+          draggable={false}
+        />
+
+        <AnimatedCharacter
+          folderName={myFolder}
+          facing="back"
+          action={meAction}
+          className={meQuake ? "v1Me quake" : "v1Me"}
+          alt="You"
+          draggable={false}
+        />
       </div>
 
       <div className="v1QuestionHud">
         <img className="v1QFrame" src="/assets/ui/question_box.png" alt="" draggable="false" />
+
         <div className="v1QInner">
           {!started ? (
             <div className="v1Center">
               <div className="v1Title">Waiting for host to start…</div>
               <div className="v1Sub">Room: {roomCode}</div>
             </div>
-          ) : endReason ? (
-            <div className="v1Center">
-              <div className="v1Title">{endText(endReason, socketId, state)}</div>
-              <div className="v1Sub">Winner gets 50 coins.</div>
-            </div>
           ) : !q ? (
             <div className="v1Center">
-              <div className="v1Title">Loading your questions…</div>
-              <div className="v1Sub">You and your opponent have separate questions.</div>
+              <div className="v1Title">Loading your question…</div>
+              <div className="v1Sub">If it takes long, host may not have uploaded yet.</div>
             </div>
           ) : (
             <>

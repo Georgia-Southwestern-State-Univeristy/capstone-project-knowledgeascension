@@ -1,109 +1,66 @@
-
 :root{
-  /* =========================
-     MAIN MENU / EXIT BUTTON
-     ========================= */
-  --coopExitLeft: 24px;     /* left/right */
-  --coopExitTop: 18px;      /* up/down */
+  --coopExitLeft: 24px;
+  --coopExitTop: 18px;
 
-  /* =========================
-     TOP HUD WRAPPER (the whole bar group)
-     ========================= */
-  --topHudX: 50%;           /* wrapper anchor X */
-  --topHudY: 18px;          /* wrapper anchor Y */
-  --topHudW: min(980px, 92vw); /* wrapper width */
-  --topHudGap: 14px;        /* gap between boss/time blocks */
+  --topHudX: 50%;
+  --topHudY: 18px;
+  --topHudW: min(980px, 92vw);
+  --topHudGap: 14px;
 
-  /* =========================
-     BOSS HUD BLOCK (position + size)
-     ========================= */
-  --bossHudX: 0px;          /* relative offset inside wrapper */
-  --bossHudY: 0px;          /* relative offset inside wrapper */
-  --bossHudW: 1fr;          /* use 1fr or a fixed width like 420px */
-  --bossHudH: auto;         /* auto or fixed height */
+  --bossHudX: 0px;
+  --bossHudY: 0px;
+  --bossHudW: 1fr;
+  --bossHudH: auto;
 
-  /* Boss HP bar sizing (inside the boss block) */
-  --bossBarH: 14px;         /* bar height */
-  --bossBarRadius: 999px;   /* bar roundness */
+  --bossBarH: 14px;
+  --bossBarRadius: 999px;
 
-  /* =========================
-     TIME HUD BLOCK (position + size)
-     ========================= */
-  --timeHudX: 0px;          /* relative offset inside wrapper */
-  --timeHudY: 0px;          /* relative offset inside wrapper */
-  --timeHudW: 1fr;          /* use 1fr or fixed width */
+  --timeHudX: 0px;
+  --timeHudY: 0px;
+  --timeHudW: 1fr;
   --timeHudH: auto;
 
-  /* Time bar sizing */
   --timeBarH: 14px;
   --timeBarRadius: 999px;
 
-  /* =========================
-     BOSS SPRITE
-     ========================= */
   --bossX: 50%;
   --bossY: 30%;
   --bossW: 420px;
 
-  /* =========================
-     PLAYERS ROW
-     ========================= */
   --playersX: 50%;
   --playersY: 60%;
   --playerSpriteW: 175px;
   --playerGap: 44px;
   --playerMinW: 170px;
 
-  /* =========================
-     QUESTION HUD FRAME (the background image)
-     ========================= */
   --qHudX: 50%;
   --qHudY: 84%;
   --qHudW: min(1280px, 96vw);
 
-  /* Safe padding inside the frame image */
   --qPadTop: 34px;
   --qPadRight: 44px;
   --qPadBottom: 34px;
   --qPadLeft: 54px;
 
-  /* =========================
-     QUESTION TEXT (MOVE + SIZE)
-     =========================
-     This is the left parchment area text.
-  */
-  --qTextX:70px;            /* move left/right inside the frame */
-  --qTextY: 150px;            /* move up/down inside the frame */
-  --qTextW: 62%;            /* width of question region */
-  --qTextH: 220px;          /* height of question region */
-  --qFont: 25px;            /* question font size */
+  --qTextX: 70px;
+  --qTextY: 150px;
+  --qTextW: 62%;
+  --qTextH: 220px;
+  --qFont: 25px;
 
-  /* =========================
-     ANSWERS (MOVE + SIZE)
-     =========================
-     This controls the whole answer stack area.
-  */
-  --ansX: 760px;              /* move left/right inside the frame */
-  --ansY: 230px;              /* move up/down inside the frame */
-  --ansW: 20%;              /* width of answer region */
-  --ansH: 260px;            /* total answer region height */
-  --ansGap: 10px;           /* vertical gap between answer buttons */
-  --ansPadY: 1px;          /* answer padding Y */
-  --ansPadX: 15px;          /* answer padding X */
-  --ansFont: 18px;          /* answer font size */
+  --ansX: 760px;
+  --ansY: 230px;
+  --ansW: 20%;
+  --ansH: 260px;
+  --ansGap: 10px;
+  --ansPadY: 1px;
+  --ansPadX: 15px;
+  --ansFont: 18px;
 
-  /* Optional: tweak answer button height consistency */
-  --ansBtnMinH: 10px;       /* min height per answer button */
-
-  /* =========================
-     VISUALS
-     ========================= */
-  --hudBlur: 6px;           /* blur used on glass panels */
+  --ansBtnMinH: 10px;
+  --hudBlur: 6px;
 }
 
-/* ------------------------------
-   Stage / Background
-   ------------------------------ */
 .coopRoot{
   position: fixed;
   inset: 0;
@@ -125,9 +82,6 @@
   height: 100%;
 }
 
-/* ------------------------------
-   Exit Button
-   ------------------------------ */
 .coopExit{
   position: absolute;
   left: var(--coopExitLeft);
@@ -141,11 +95,6 @@
   cursor: pointer;
 }
 
-/* =========================================================
-   TOP HUD: Boss + Time (moveable + resizable)
-   ========================================================= */
-
-/* Wrapper that holds both blocks */
 .coopTopBars{
   position: absolute;
   left: var(--topHudX);
@@ -153,14 +102,12 @@
   transform: translateX(-50%);
   width: var(--topHudW);
   z-index: 55;
-
   display: grid;
   grid-template-columns: var(--bossHudW) var(--timeHudW);
   gap: var(--topHudGap);
   align-items: start;
 }
 
-/* Shared block styling */
 .barBlock{
   padding: 12px 14px;
   border-radius: 14px;
@@ -171,7 +118,6 @@
   color: #fff;
 }
 
-/* Per-block position offsets */
 .barBlock.bossBlock{
   position: relative;
   left: var(--bossHudX);
@@ -192,13 +138,11 @@
   letter-spacing: 0.2px;
 }
 
-/* Bar container */
 .barOuter{
   background: rgba(255,255,255,0.14);
   overflow: hidden;
 }
 
-/* Boss/Time specific bar sizes */
 .bossBlock .barOuter{
   height: var(--bossBarH);
   border-radius: var(--bossBarRadius);
@@ -208,7 +152,6 @@
   border-radius: var(--timeBarRadius);
 }
 
-/* Fill */
 .barFill{
   height: 100%;
   background: rgba(255, 210, 120, 0.85);
@@ -220,9 +163,6 @@
   opacity: 0.9;
 }
 
-/* ------------------------------
-   Boss Sprite
-   ------------------------------ */
 .bossWrap{
   position: absolute;
   left: var(--bossX);
@@ -236,12 +176,12 @@
   width: var(--bossW);
   height: auto;
   image-rendering: pixelated;
+  object-fit: contain;
+  background: transparent;
+  display: block;
   filter: drop-shadow(0 14px 30px rgba(0,0,0,0.50));
 }
 
-/* ------------------------------
-   Players Row
-   ------------------------------ */
 .playersRow{
   position: absolute;
   left: var(--playersX);
@@ -293,12 +233,11 @@
   width: var(--playerSpriteW);
   height: auto;
   image-rendering: pixelated;
+  object-fit: contain;
+  background: transparent;
+  display: block;
   filter: drop-shadow(0 14px 22px rgba(0,0,0,0.55));
 }
-
-/* =========================================================
-   QUESTION HUD (question + answers move independently)
-   ========================================================= */
 
 .questionHud{
   position: absolute;
@@ -317,71 +256,53 @@
   -webkit-user-drag: none;
 }
 
-/* Content inside the frame image */
 .qContent{
   position: absolute;
   inset: 0;
   padding: var(--qPadTop) var(--qPadRight) var(--qPadBottom) var(--qPadLeft);
-
-  /* Anchor context so we can move question + answers freely */
   display: block;
 }
 
-/* QUESTION TEXT REGION (moveable) */
 .qText{
   position: absolute;
   left: var(--qTextX);
   top: var(--qTextY);
   width: var(--qTextW);
   height: var(--qTextH);
-
   font-weight: 900;
   color: #2b1a0a;
   text-shadow: 0 2px 10px rgba(0,0,0,0.10);
   font-size: var(--qFont);
   line-height: 1.35;
-
   display: flex;
   align-items: center;
-
-  /* Keeps long text from spilling */
   overflow: hidden;
 }
 
-/* ANSWERS REGION (moveable) */
 .ansGrid{
   position: absolute;
   left: var(--ansX);
   top: var(--ansY);
   width: var(--ansW);
   height: var(--ansH);
-
   display: flex;
   flex-direction: column;
   gap: var(--ansGap);
 }
 
-/* Answer buttons */
 .ansBtn{
   cursor: pointer;
-
   min-height: var(--ansBtnMinH);
-
   border-radius: 10px;
   border: 1px solid rgba(43,26,10,0.18);
-
   background: rgba(255,255,255,0.10);
   color: #2b1a0a;
-
   font-weight: 900;
   font-size: var(--ansFont);
-
   padding: var(--ansPadY) var(--ansPadX);
   text-align: left;
-
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-
   transition: transform .08s ease, filter .08s ease;
 }
 
@@ -390,10 +311,6 @@
   filter: brightness(1.08);
 }
 
-/* ------------------------------
-   Center Message States
-   (waiting, loading, end screen text)
-   ------------------------------ */
 .qCenter{
   position: absolute;
   inset: 0;
@@ -413,9 +330,6 @@
   opacity: 0.8;
 }
 
-/* ------------------------------
-   Death Overlay
-   ------------------------------ */
 .deadOverlay{
   position: absolute;
   inset: 0;
@@ -423,6 +337,44 @@
   place-items: center;
   background: rgba(0,0,0,0.30);
   border-radius: 18px;
+}
+
+.coopEndOverlay{
+  background: rgba(0,0,0,0.45);
+  border-radius: 0;
+}
+
+.youDied{
+  width: min(900px, 80vw);
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.deathStats{
+  color: #fff;
+  font-size: 28px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  text-align: center;
+  display: grid;
+  gap: 10px;
+}
+
+.deathButtons{
+  display: flex;
+  gap: 16px;
+}
+
+.deathButtons button,
+.respawnBtn{
+  margin-top: 10px;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255, 210, 120, 0.25);
+  color: #fff;
+  font-weight: 900;
 }
 
 .deadTitle{
@@ -436,25 +388,16 @@
   color: rgba(255,255,255,0.90);
   font-weight: 800;
 }
-.respawnBtn{
-  margin-top: 10px;
-  cursor: pointer;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.22);
-  background: rgba(255, 210, 120, 0.25);
-  color: #fff;
-  font-weight: 900;
-}
+
 .quake{
-  animation: quakeAnim 0.22s linear;
+  animation: quake 0.22s linear;
 }
 
-@keyframes quakeAnim{
-  0%   { transform: translate(0, 0); }
-  20%  { transform: translate(-5px, 2px); }
-  40%  { transform: translate(5px, -2px); }
-  60%  { transform: translate(-4px, 1px); }
-  80%  { transform: translate(4px, -1px); }
-  100% { transform: translate(0, 0); }
+@keyframes quake{
+  0%{ transform: translate(-50%, -50%) translate(0,0); }
+  20%{ transform: translate(-50%, -50%) translate(-6px,2px); }
+  40%{ transform: translate(-50%, -50%) translate(6px,-2px); }
+  60%{ transform: translate(-50%, -50%) translate(-5px,-2px); }
+  80%{ transform: translate(-50%, -50%) translate(5px,2px); }
+  100%{ transform: translate(-50%, -50%) translate(0,0); }
 }

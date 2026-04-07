@@ -7,14 +7,14 @@
 // - Loot = % chance to earn +1 coin on each correct answer during 1v1
 
 export const CHARACTERS = [
-  { id: "archer", folderName: "Archer", displayName: "Archer", baseStats: { health: 65, damage: 24, loot: 45 } },
-  { id: "beggar", folderName: "Beggar", displayName: "Beggar", baseStats: { health: 55, damage: 14, loot: 95 } },
-  { id: "fairy", folderName: "Fairy", displayName: "Fairy", baseStats: { health: 60, damage: 20, loot: 80 } },
-  { id: "king", folderName: "King", displayName: "King", baseStats: { health: 95, damage: 16, loot: 20 } },
-  { id: "knight", folderName: "Knight", displayName: "Knight", baseStats: { health: 78, damage: 22, loot: 40 } },
-  { id: "merchant", folderName: "Merchant", displayName: "Merchant", baseStats: { health: 70, damage: 18, loot: 90 } },
-  { id: "orc", folderName: "Orc", displayName: "Orc", baseStats: { health: 80, damage: 26, loot: 15 } },
-  { id: "sorcerer", folderName: "Sorcerer", displayName: "Sorcerer", baseStats: { health: 55, damage: 30, loot: 35 } },
+  { id: "archer", folderName: "Archer", displayName: "Archer", baseStats: { health: 65, damage: 75, loot: 35 } },
+  { id: "beggar", folderName: "Beggar", displayName: "Beggar", baseStats: { health: 45, damage: 15, loot: 100 } },
+  { id: "fairy", folderName: "Fairy", displayName: "Fairy", baseStats: { health: 60, damage: 25, loot: 75 } },
+  { id: "king", folderName: "King", displayName: "King", baseStats: { health: 100, damage: 10, loot: 20 } },
+  { id: "knight", folderName: "Knight", displayName: "Knight", baseStats: { health: 75, damage: 55, loot: 25 } },
+  { id: "merchant", folderName: "Merchant", displayName: "Merchant", baseStats: { health: 70, damage: 10, loot: 80 } },
+  { id: "orc", folderName: "Orc", displayName: "Orc", baseStats: { health: 25, damage: 86, loot: 40 } },
+  { id: "sorcerer", folderName: "Sorcerer", displayName: "Sorcerer", baseStats: { health: 35, damage: 90, loot: 5 } },
 ];
 
 export const DEFAULT_CHARACTER_ID = "knight";

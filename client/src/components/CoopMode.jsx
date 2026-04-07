@@ -4,6 +4,11 @@ import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { CHARACTERS } from "../db/characters";
 import { recordDailyStat } from "../game/dailyTasks.js";
+import AnimatedCharacter from "./AnimatedCharacter.jsx";
+
+const UI = {
+  YOU_DIED: "/assets/ui/you_died.png",
+};
 
 function getCoopServerBase() {
   const host = window.location.hostname;
@@ -27,11 +32,15 @@ export default function CoopMode({ room, onBackToMenu }) {
 
   const [bossQuake, setBossQuake] = useState(false);
   const [playerQuakeMap, setPlayerQuakeMap] = useState({});
+  const [playerActionMap, setPlayerActionMap] = useState({});
+  const [coinsEarned, setCoinsEarned] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
 
   const prevBossHpRef = useRef(null);
   const prevHpMapRef = useRef({});
   const startedTrackedRef = useRef(false);
   const winTrackedRef = useRef(false);
+  const attackTimersRef = useRef({});
 
   const socketRef = useRef(null);
   const apiBase = useMemo(() => getCoopServerBase(), []);
@@ -48,6 +57,18 @@ export default function CoopMode({ room, onBackToMenu }) {
     window.setTimeout(() => {
       setPlayerQuakeMap((m) => ({ ...m, [playerId]: false }));
     }, 220);
+  };
+
+  const attackPlayer = (playerId) => {
+    if (attackTimersRef.current[playerId]) {
+      clearTimeout(attackTimersRef.current[playerId]);
+    }
+
+    setPlayerActionMap((m) => ({ ...m, [playerId]: "attack" }));
+
+    attackTimersRef.current[playerId] = setTimeout(() => {
+      setPlayerActionMap((m) => ({ ...m, [playerId]: "idle" }));
+    }, 420);
   };
 
   useEffect(() => {
@@ -85,6 +106,8 @@ export default function CoopMode({ room, onBackToMenu }) {
       if (st?.started && !startedTrackedRef.current) {
         startedTrackedRef.current = true;
         winTrackedRef.current = false;
+        setCoinsEarned(0);
+        setCorrectCount(0);
 
         if (username) {
           recordDailyStat(username, "coopMatches", 1);
@@ -102,6 +125,8 @@ export default function CoopMode({ room, onBackToMenu }) {
       setEndReason("");
       setState(st);
       setQ(st?.curQuestion || null);
+      setCoinsEarned(0);
+      setCorrectCount(0);
       startedTrackedRef.current = true;
       winTrackedRef.current = false;
 
@@ -115,7 +140,13 @@ export default function CoopMode({ room, onBackToMenu }) {
 
       quakeBoss();
 
+      if (payload.playerId) {
+        attackPlayer(payload.playerId);
+      }
+
       if (payload.playerId === s.id) {
+        setCorrectCount((v) => v + 1);
+
         if (username) {
           recordDailyStat(username, "correctAnswers", 1);
 
@@ -125,6 +156,7 @@ export default function CoopMode({ room, onBackToMenu }) {
         }
 
         if (payload.coinDrop > 0) {
+          setCoinsEarned((v) => v + payload.coinDrop);
           try {
             await addCoins(payload.coinDrop);
           } catch {}
@@ -149,6 +181,7 @@ export default function CoopMode({ room, onBackToMenu }) {
     });
 
     return () => {
+      Object.values(attackTimersRef.current).forEach((t) => clearTimeout(t));
       try { s.disconnect(); } catch {}
       socketRef.current = null;
     };
@@ -184,6 +217,31 @@ export default function CoopMode({ room, onBackToMenu }) {
 
   const remaining = Math.max(0, localDeadUntil - Date.now());
   const respawnReady = me?.hp <= 0 && remaining <= 0;
+  const isEnded = !!endReason;
+
+  if (isEnded) {
+    return (
+      <div className="coopRoot">
+        <img className="coopBg" src="/assets/arenas/boss_stage.png" alt="Boss Arena" draggable="false" />
+        <div className="coopStage">
+          <div className="deathOverlay coopEndOverlay">
+            <img className="youDied" src={UI.YOU_DIED} alt="You Died" draggable="false" />
+
+            <div className="deathStats">
+              <div><b>Result:</b> {endText(endReason)}</div>
+              <div><b>Your Correct Answers:</b> {correctCount}</div>
+              <div><b>Your Coins Earned:</b> {coinsEarned}</div>
+              <div><b>Saved To Account:</b> {username ? "Yes" : "No (not logged in)"}</div>
+            </div>
+
+            <div className="deathButtons">
+              <button onClick={onBackToMenu}>Menu</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="coopRoot">
@@ -227,8 +285,8 @@ export default function CoopMode({ room, onBackToMenu }) {
         <div className="playersRow">
           {(state?.players || []).map((p) => {
             const folder = folderForEquippedId(p.equipped);
-            const sprite = `/assets/characters/${folder}/back.png`;
             const quaking = !!playerQuakeMap[p.id];
+            const action = playerActionMap[p.id] || "idle";
 
             return (
               <div className="playerSlot" key={p.id}>
@@ -237,11 +295,13 @@ export default function CoopMode({ room, onBackToMenu }) {
                   <div className={p.hp > 0 ? "hp ok" : "hp dead"}>HP {p.hp}</div>
                 </div>
 
-                <img
+                <AnimatedCharacter
+                  folderName={folder}
+                  facing="back"
+                  action={action}
                   className={quaking ? "playerSprite quake" : "playerSprite"}
-                  src={sprite}
                   alt={p.name}
-                  draggable="false"
+                  draggable={false}
                 />
               </div>
             );
@@ -256,11 +316,6 @@ export default function CoopMode({ room, onBackToMenu }) {
               <div className="qCenter">
                 <div className="qTitle">Waiting for host to start…</div>
                 <div className="qSub">Room: {roomCode}</div>
-              </div>
-            ) : endReason ? (
-              <div className="qCenter">
-                <div className="qTitle">{endText(endReason)}</div>
-                <div className="qSub">Press Main Menu to exit.</div>
               </div>
             ) : !q ? (
               <div className="qCenter">

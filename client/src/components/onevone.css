@@ -4,7 +4,7 @@
   --v1ExitLeft: 24px;
   --v1ExitTop: 18px;
 
-  --v1HudTop: 18px;
+  --v1HudTop: 25px;
   --v1HudLeft: 50%;
   --v1HudW: min(980px, 92vw);
   --v1HudGap: 14px;
@@ -13,7 +13,7 @@
   --v1EnemyY: 44%;
   --v1EnemyW: 520px;
 
-  --v1MeX: 26%;
+  --v1MeX: 35%;
   --v1MeY: 62%;
   --v1MeW: 760px;
 
@@ -21,7 +21,7 @@
   --v1QY: 84%;
   --v1QW: min(1280px, 96vw);
 
-  --v1QTextX: 70px;
+  --v1QTextX: 150px;
   --v1QTextY: 180px;
   --v1QTextW: 62%;
   --v1QTextH: 260px;
@@ -129,6 +129,9 @@
   width: var(--v1EnemyW);
   height: auto;
   image-rendering: pixelated;
+  object-fit: contain;
+  background: transparent;
+  display: block;
   filter: drop-shadow(0 14px 30px rgba(0,0,0,0.50));
 }
 
@@ -140,6 +143,9 @@
   width: var(--v1MeW);
   height: auto;
   image-rendering: pixelated;
+  object-fit: contain;
+  background: transparent;
+  display: block;
   filter: drop-shadow(0 14px 30px rgba(0,0,0,0.55));
 }
 
@@ -242,4 +248,46 @@
   margin-top: 8px;
   font-weight: 800;
   opacity: 0.8;
+}
+
+.v1EndOverlay{
+  background: rgba(0,0,0,0.45);
+}
+
+.youDied{
+  width: min(900px, 80vw);
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.deathOverlay{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.30);
+}
+
+.deathStats{
+  color: #fff;
+  font-size: 28px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  text-align: center;
+  display: grid;
+  gap: 10px;
+}
+
+.deathButtons{
+  display: flex;
+  gap: 16px;
+}
+
+.deathButtons button{
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  cursor: pointer;
 }

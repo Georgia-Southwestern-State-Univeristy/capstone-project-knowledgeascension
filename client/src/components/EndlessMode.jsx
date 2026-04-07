@@ -1,9 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./endless.css";
-import { seedQuestionsIfNeeded, getRandomQuestion } from "../db/questionsDb";
+import {
+  seedQuestionsIfNeeded,
+  getRandomQuestion,
+  setRunBank,
+  clearRunBank,
+  getRunBankSize,
+} from "../db/questionsDb";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { CHARACTERS, DEFAULT_CHARACTER_ID } from "../db/characters";
 import { recordDailyStat } from "../game/dailyTasks.js";
+import AnimatedCharacter from "./AnimatedCharacter.jsx";
 
 const UI = {
   ENEMY_BAR: "/assets/ui/enemy_bar.png",
@@ -56,15 +63,18 @@ export default function EndlessMode({ onBackToMenu }) {
   const { username, profile, addCoins } = useAuth();
 
   const HERO_DAMAGE = 25;
+  const HERO_HP_MAX = 100;
 
   const [scale, setScale] = useState(1);
   useEffect(() => {
-    const W = 1920, H = 1080;
+    const W = 1920;
+    const H = 1080;
     const update = () => setScale(Math.min(1, Math.min(window.innerWidth / W, window.innerHeight / H)));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
   const stageStyle = useMemo(
     () => ({ transform: `translate(-50%, -50%) scale(${scale})` }),
     [scale]
@@ -72,7 +82,7 @@ export default function EndlessMode({ onBackToMenu }) {
 
   const equippedId = safeLower(profile?.equippedCharacter || DEFAULT_CHARACTER_ID);
   const equippedChar = CHARACTERS.find((c) => safeLower(c.id) === equippedId) || CHARACTERS[0];
-  const heroBack = `/assets/characters/${equippedChar.folderName}/back.png`;
+  const heroFolder = equippedChar.folderName;
   const equippedLabel = equippedChar.id;
 
   const makeEnemy = () => {
@@ -82,7 +92,7 @@ export default function EndlessMode({ onBackToMenu }) {
   };
 
   const [arena, setArena] = useState(() => pick(ARENAS));
-  const [playerHp, setPlayerHp] = useState(100);
+  const [playerHp, setPlayerHp] = useState(HERO_HP_MAX);
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [kills, setKills] = useState(0);
   const [dead, setDead] = useState(false);
@@ -91,6 +101,14 @@ export default function EndlessMode({ onBackToMenu }) {
 
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
+
+  const [heroAction, setHeroAction] = useState("idle");
+  const [heroQuake, setHeroQuake] = useState(false);
+  const [enemyQuake, setEnemyQuake] = useState(false);
+
+  const heroAttackTimerRef = useRef(null);
+  const heroQuakeTimerRef = useRef(null);
+  const enemyQuakeTimerRef = useRef(null);
 
   const playerHpRef = useRef(playerHp);
   const enemyRef = useRef(enemy);
@@ -108,6 +126,36 @@ export default function EndlessMode({ onBackToMenu }) {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicVolume, setMusicVolume] = useState(0.6);
 
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const [progress, setProgress] = useState({ pct: 0, label: "" });
+  const fakeProgRef = useRef(null);
+  const [bankReady, setBankReady] = useState(false);
+
+  const triggerHeroAttack = () => {
+    if (heroAttackTimerRef.current) clearTimeout(heroAttackTimerRef.current);
+    setHeroAction("attack");
+    heroAttackTimerRef.current = setTimeout(() => {
+      setHeroAction("idle");
+    }, 420);
+  };
+
+  const triggerHeroQuake = () => {
+    if (heroQuakeTimerRef.current) clearTimeout(heroQuakeTimerRef.current);
+    setHeroQuake(true);
+    heroQuakeTimerRef.current = setTimeout(() => {
+      setHeroQuake(false);
+    }, 220);
+  };
+
+  const triggerEnemyQuake = () => {
+    if (enemyQuakeTimerRef.current) clearTimeout(enemyQuakeTimerRef.current);
+    setEnemyQuake(true);
+    enemyQuakeTimerRef.current = setTimeout(() => {
+      setEnemyQuake(false);
+    }, 220);
+  };
+
   useEffect(() => {
     const audio = new Audio(battleTrack);
     audio.loop = true;
@@ -119,7 +167,12 @@ export default function EndlessMode({ onBackToMenu }) {
         audio.pause();
         audio.currentTime = 0;
       } catch {}
+      if (heroAttackTimerRef.current) clearTimeout(heroAttackTimerRef.current);
+      if (heroQuakeTimerRef.current) clearTimeout(heroQuakeTimerRef.current);
+      if (enemyQuakeTimerRef.current) clearTimeout(enemyQuakeTimerRef.current);
+      if (fakeProgRef.current) clearInterval(fakeProgRef.current);
       audioRef.current = null;
+      clearRunBank();
     };
   }, []);
 
@@ -137,6 +190,19 @@ export default function EndlessMode({ onBackToMenu }) {
     setMusicPlaying(false);
   }, [dead]);
 
+  useEffect(() => {
+    (async () => {
+      await seedQuestionsIfNeeded();
+      const size = getRunBankSize();
+      setBankReady(size > 0);
+      if (size > 0) {
+        setQuestion(await getRandomQuestion());
+      } else {
+        setQuestion(null);
+      }
+    })();
+  }, []);
+
   const toggleMusic = async () => {
     const a = audioRef.current;
     if (!a) return;
@@ -150,8 +216,7 @@ export default function EndlessMode({ onBackToMenu }) {
     try {
       await a.play();
       setMusicPlaying(true);
-    } catch (err) {
-      console.warn("Music play blocked:", err);
+    } catch {
       setMusicPlaying(false);
     }
   };
@@ -176,17 +241,6 @@ export default function EndlessMode({ onBackToMenu }) {
       sfx.play().catch(() => {});
     } catch {}
   };
-
-  useEffect(() => {
-    (async () => {
-      await seedQuestionsIfNeeded();
-      setQuestion(await getRandomQuestion());
-
-      if (username) {
-        recordDailyStat(username, "endlessRuns", 1);
-      }
-    })();
-  }, [username]);
 
   const nextQuestion = async () => setQuestion(await getRandomQuestion());
 
@@ -223,20 +277,83 @@ export default function EndlessMode({ onBackToMenu }) {
     setTimeout(() => setCoinPop(null), 1100);
   };
 
+  const startFakeProgress = () => {
+    if (fakeProgRef.current) clearInterval(fakeProgRef.current);
+    fakeProgRef.current = window.setInterval(() => {
+      setProgress((cur) => ({
+        pct: Math.min(95, cur.pct + Math.max(1, (95 - cur.pct) * 0.08)),
+        label: cur.label || "Generating.",
+      }));
+    }, 280);
+  };
+
+  const stopFakeProgress = () => {
+    if (fakeProgRef.current) window.clearInterval(fakeProgRef.current);
+    fakeProgRef.current = null;
+  };
+
+  const uploadStudyFile = async (file) => {
+    setUploadErr("");
+    setUploading(true);
+    startFakeProgress();
+
+    try {
+      setProgress({ pct: 12, label: "Uploading." });
+
+      const form = new FormData();
+      form.append("file", file);
+
+      const host = window.location.hostname;
+      const res = await fetch(`http://${host}:5175/api/endless/upload`, {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(String(data?.error || "Upload failed."));
+      }
+
+      const qs = Array.isArray(data?.questions) ? data.questions : [];
+      if (!qs.length) throw new Error("No questions returned.");
+
+      stopFakeProgress();
+      setProgress({ pct: 100, label: "Done" });
+
+      clearRunBank();
+      setRunBank(qs);
+      setBankReady(true);
+      setQuestion(qs[0] || null);
+
+      setUploading(false);
+
+      if (username) {
+        recordDailyStat(username, "endlessRuns", 1);
+      }
+    } catch (e) {
+      stopFakeProgress();
+      setUploading(false);
+      setProgress({ pct: 0, label: "" });
+      setUploadErr(e?.message || "Upload failed.");
+    }
+  };
+
   const resetRun = async () => {
     lockedRef.current = false;
     setLocked(false);
     setDead(false);
-    setPlayerHp(100);
+    setPlayerHp(HERO_HP_MAX);
     setCoinsEarned(0);
     setKills(0);
     setArena(pick(ARENAS));
     setEnemy(makeEnemy());
     setQuestion(await getRandomQuestion());
+    setHeroAction("idle");
+    setHeroQuake(false);
+    setEnemyQuake(false);
     prevCoinsRef.current = 0;
     setCoinDrops([]);
     setCoinPop(null);
-
     stopMusicHard();
 
     if (username) {
@@ -272,6 +389,9 @@ export default function EndlessMode({ onBackToMenu }) {
     const curEnemy = enemyRef.current;
 
     if (picked === correct) {
+      triggerHeroAttack();
+      triggerEnemyQuake();
+
       if (username) {
         recordDailyStat(username, "correctAnswers", 1);
       }
@@ -308,6 +428,8 @@ export default function EndlessMode({ onBackToMenu }) {
       return;
     }
 
+    triggerHeroQuake();
+
     const nextHP = Math.max(0, curHP - 10);
     setPlayerHp(nextHP);
 
@@ -330,8 +452,54 @@ export default function EndlessMode({ onBackToMenu }) {
     resolveOnce(key);
   };
 
-  const heroPct = Math.max(0, Math.min(1, playerHp / 100));
+  const needsUpload = !bankReady && !dead;
+
+  const heroPct = Math.max(0, Math.min(1, playerHp / Math.max(1, HERO_HP_MAX)));
   const enemyPct = enemy.maxHp ? Math.max(0, Math.min(1, enemy.hp / enemy.maxHp)) : 1;
+
+  if (needsUpload) {
+    return (
+      <div className="endRoot">
+        <div className="endStage" style={stageStyle}>
+          <img className="arenaBg" src={arena} alt="" draggable="false" />
+
+          <div className="endUploadCard">
+            <div className="endUploadTitle">Upload Study File</div>
+            <div className="endUploadSub">PDF / DOCX / PPTX • Generates 100 questions for this run.</div>
+
+            <label className="endUploadBtn">
+              <input
+                type="file"
+                accept=".pdf,.docx,.pptx"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadStudyFile(f);
+                  e.target.value = "";
+                }}
+              />
+              {uploading ? "Generating." : "Choose File"}
+            </label>
+
+            {uploading && (
+              <div className="endProgWrap">
+                <div className="endProgLabel">{progress.label} ({Math.floor(progress.pct)}%)</div>
+                <div className="endProgTrack">
+                  <div className="endProgFill" style={{ width: `${Math.max(0, Math.min(100, progress.pct))}%` }} />
+                </div>
+              </div>
+            )}
+
+            {uploadErr && <div className="endUploadErr">{uploadErr}</div>}
+
+            <button className="endBackBtn" onClick={onBackToMenu} type="button">
+              Back to Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (dead) {
     return (
@@ -363,26 +531,26 @@ export default function EndlessMode({ onBackToMenu }) {
       <div className="endStage" style={stageStyle}>
         <img className="arenaBg" src={arena} alt="" draggable="false" />
 
-        <div className="hud">
-          <div className="hudRow">
-            <img className="hudCoinIcon" src={COIN_PNG} alt="" draggable="false" />
-            <span className="hudCoinsNum">{coinsEarned}</span>
+        <div className="endHud">
+          <div className="endHudRow">
+            <img className="endHudCoinIcon" src={COIN_PNG} alt="" draggable="false" />
+            <span className="endHudCoinsNum">{coinsEarned}</span>
           </div>
           <div>Kills: {kills}</div>
 
           {coinPop && (
-            <div className="coinPop" style={{ left: 145, top: 8 }}>
+            <div className="endCoinPop" style={{ left: 145, top: 8 }}>
               +{coinPop.amount}
             </div>
           )}
         </div>
 
-        <div className="musicDock">
-          <button type="button" className="musicBtn" onClick={toggleMusic}>
+        <div className="endMusicDock">
+          <button type="button" className="endMusicBtn" onClick={toggleMusic}>
             {musicPlaying ? "Pause" : "Play"}
           </button>
 
-          <label className="musicLabel">
+          <label className="endMusicLabel">
             Vol
             <input
               type="range"
@@ -395,12 +563,12 @@ export default function EndlessMode({ onBackToMenu }) {
           </label>
         </div>
 
-        <button className="menuBtn" onClick={onBackToMenu}>Menu</button>
+        <button className="endMenuBtn" onClick={onBackToMenu}>Menu</button>
 
         {coinDrops.map((c) => (
           <img
             key={c.id}
-            className="coinDrop"
+            className="endCoinDrop"
             src={COIN_PNG}
             alt=""
             draggable="false"
@@ -414,35 +582,48 @@ export default function EndlessMode({ onBackToMenu }) {
           />
         ))}
 
-        <img className="heroSprite" src={heroBack} alt="Hero" draggable="false" />
-        <img className="enemySprite" src={enemy.src} alt={enemy.name} draggable="false" />
+        <AnimatedCharacter
+          folderName={heroFolder}
+          facing="back"
+          action={heroAction}
+          className={heroQuake ? "endHeroSprite quake" : "endHeroSprite"}
+          alt="Hero"
+          draggable={false}
+        />
 
-        <div className="bar enemyBar">
-          <img className="barFrame" src={UI.ENEMY_BAR} alt="" draggable="false" />
-          <div className="barName">{enemy.name}</div>
-          <div className="barFill" style={{ transform: `scaleX(${enemyPct})` }} />
+        <img
+          className={enemyQuake ? "endEnemySprite quake" : "endEnemySprite"}
+          src={enemy.src}
+          alt={enemy.name}
+          draggable="false"
+        />
+
+        <div className="endEnemyBar">
+          <img className="endBarFrame" src={UI.ENEMY_BAR} alt="" draggable="false" />
+          <div className="endEnemyBarName">{enemy.name}</div>
+          <div className="endEnemyBarFill" style={{ transform: `scaleX(${enemyPct})` }} />
         </div>
 
-        <div className="bar heroBar">
-          <img className="barFrame" src={UI.HERO_BAR} alt="" draggable="false" />
-          <div className="barName">{equippedLabel}</div>
-          <div className="barFill" style={{ transform: `scaleX(${heroPct})` }} />
+        <div className="endHeroBar">
+          <img className="endBarFrame" src={UI.HERO_BAR} alt="" draggable="false" />
+          <div className="endHeroBarName">{equippedLabel}</div>
+          <div className="endHeroBarFill" style={{ transform: `scaleX(${heroPct})` }} />
         </div>
 
-        <div className="qWrap">
-          <img className="qFrame" src={UI.QUESTION_BOX} alt="" draggable="false" />
-          <div className="qText">{question ? question.text : "Loading..."}</div>
+        <div className="endQuestionWrap">
+          <img className="endQuestionFrame" src={UI.QUESTION_BOX} alt="" draggable="false" />
+          <div className="endQuestionText">{question ? question.text : "Loading..."}</div>
 
-          <button type="button" className="ans a1" disabled={locked} onPointerDown={handlePick("a")}>
+          <button type="button" className="endAnswer endAnswer1" disabled={locked} onPointerDown={handlePick("a")}>
             <span>{question?.a ?? ""}</span>
           </button>
-          <button type="button" className="ans a2" disabled={locked} onPointerDown={handlePick("b")}>
+          <button type="button" className="endAnswer endAnswer2" disabled={locked} onPointerDown={handlePick("b")}>
             <span>{question?.b ?? ""}</span>
           </button>
-          <button type="button" className="ans a3" disabled={locked} onPointerDown={handlePick("c")}>
+          <button type="button" className="endAnswer endAnswer3" disabled={locked} onPointerDown={handlePick("c")}>
             <span>{question?.c ?? ""}</span>
           </button>
-          <button type="button" className="ans a4" disabled={locked} onPointerDown={handlePick("d")}>
+          <button type="button" className="endAnswer endAnswer4" disabled={locked} onPointerDown={handlePick("d")}>
             <span>{question?.d ?? ""}</span>
           </button>
         </div>
