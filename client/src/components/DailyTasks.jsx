@@ -23,9 +23,9 @@ export default function DailyTasks({ onBackToMenu }) {
     setBg(pick(ARENAS));
   }, []);
 
-  const refresh = () => {
+  const refresh = async () => { //made async
     if (!username) return;
-    setTaskPack(getDailyTaskPack(username));
+    setTaskPack(await getDailyTaskPack(username));
   };
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export default function DailyTasks({ onBackToMenu }) {
 
     setMsg("");
 
-    const result = claimDailyTask(username, task.instanceId);
+    const result = await claimDailyTask(username, task.instanceId);
     if (!result.ok) {
       setMsg("That task is not ready to claim yet.");
       refresh();

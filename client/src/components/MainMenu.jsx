@@ -11,15 +11,38 @@ export default function MainMenu({
   onOpenDailyTasks,
 }) {
   const { loading, username, profile, signup, login, logout } = useAuth();
+  const DESKTOP_STAGE = { width: 1920, height: 1080 };
+  const TABLET_STAGE = { width: 1024, height: 1366 };
+  const PHONE_STAGE = { width: 430, height: 932 };
 
   const [selected, setSelected] = useState("1V1");
 
   const [scale, setScale] = useState(1);
+  const [layoutMode, setLayoutMode] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth <= 620
+      ? "phone"
+      : typeof window !== "undefined" && window.innerWidth <= 1180
+        ? "tablet"
+        : "desktop"
+  );
+
   useEffect(() => {
-    const W = 1920;
-    const H = 1080;
-    const update = () =>
-      setScale(Math.min(1, Math.min(window.innerWidth / W, window.innerHeight / H)));
+    const update = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const nextLayoutMode = width <= 620 ? "phone" : width <= 1180 ? "tablet" : "desktop";
+      const stage =
+        nextLayoutMode === "phone"
+          ? PHONE_STAGE
+          : nextLayoutMode === "tablet"
+            ? TABLET_STAGE
+            : DESKTOP_STAGE;
+      const fitScale = Math.min(1, Math.min(width / stage.width, height / stage.height));
+
+      setLayoutMode(nextLayoutMode);
+      setScale(fitScale);
+    };
+
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -125,116 +148,119 @@ export default function MainMenu({
     <div className="menuRoot">
       <video className="menuBg" src="/assets/menu/bg.mp4" autoPlay loop muted playsInline />
 
-      <div className="menuStage" style={stageStyle}>
-        <div className="loginPanel">
-          {loading ? (
-            <div className="loginTitle">Loading</div>
-          ) : username ? (
-            <>
-              <div className="loginTitle">Account</div>
-              <div className="loginRow"><b>User:</b> {username}</div>
-              <div className="loginRow"><b>Brains:</b> {profile?.coins ?? 0}</div>
-              <div className="loginRow"><b>Equipped:</b> {profile?.equippedCharacter ?? "knight"}</div>
-              <button className="loginBtn" onClick={logout}>Logout</button>
-            </>
-          ) : (
-            <>
-              <div className="loginTitle">{mode === "signup" ? "Create Account" : "Login"}</div>
+      <div
+        className={`menuStage ${layoutMode === "phone" ? "phoneLayout" : ""} ${layoutMode === "tablet" ? "tabletLayout" : ""}`}
+        style={stageStyle}
+      >
+          <div className="loginPanel">
+            {loading ? (
+              <div className="loginTitle">Loading</div>
+            ) : username ? (
+              <>
+                <div className="loginTitle">Account</div>
+                <div className="loginRow"><b>User:</b> {username}</div>
+                <div className="loginRow"><b>Brains:</b> {profile?.coins ?? 0}</div>
+                <div className="loginRow"><b>Equipped:</b> {profile?.equippedCharacter ?? "knight"}</div>
+                <button className="loginBtn" onClick={logout}>Logout</button>
+              </>
+            ) : (
+              <>
+                <div className="loginTitle">{mode === "signup" ? "Create Account" : "Login"}</div>
 
-              <input
-                className="loginInput"
-                placeholder="Username"
-                value={u}
-                onChange={(e) => setU(e.target.value)}
-              />
-              <input
-                className="loginInput"
-                placeholder="Password"
-                type="password"
-                value={p}
-                onChange={(e) => setP(e.target.value)}
-              />
+                <input
+                  className="loginInput"
+                  placeholder="Username"
+                  value={u}
+                  onChange={(e) => setU(e.target.value)}
+                />
+                <input
+                  className="loginInput"
+                  placeholder="Password"
+                  type="password"
+                  value={p}
+                  onChange={(e) => setP(e.target.value)}
+                />
 
-              <button className="loginBtn" onClick={submit}>
-                {mode === "signup" ? "Sign Up" : "Login"}
-              </button>
+                <button className="loginBtn" onClick={submit}>
+                  {mode === "signup" ? "Sign Up" : "Login"}
+                </button>
 
-              <button
-                className="loginLink"
-                onClick={() => {
-                  setMode(mode === "signup" ? "login" : "signup");
-                  setMsg("");
-                }}
-              >
-                {mode === "signup" ? "Have an account? Login" : "New? Create account"}
-              </button>
+                <button
+                  className="loginLink"
+                  onClick={() => {
+                    setMode(mode === "signup" ? "login" : "signup");
+                    setMsg("");
+                  }}
+                >
+                  {mode === "signup" ? "Have an account? Login" : "New? Create account"}
+                </button>
 
-              {msg && <div className="loginMsg">{msg}</div>}
-            </>
-          )}
-        </div>
-
-        <img
-          className="menuTitle"
-          src="/assets/menu/title.png"
-          alt="Knowledge Ascension"
-          draggable="false"
-        />
-
-        <button className="imgBtn shopBtn" onClick={() => onOpenShop?.()}>
-          <Btn imgSrc="/assets/menu/btn_shop.png" alt="Shop" />
-        </button>
-
-        <button
-          className="imgBtn dailyBtn"
-          onClick={() => onOpenDailyTasks?.()}
-        >
-          <div className="btnWrap dailyBtnWrap">
-            <div className="goldGlow" />
-            <div className="dailyBtnPlate">Daily Tasks</div>
+                {msg && <div className="loginMsg">{msg}</div>}
+              </>
+            )}
           </div>
-        </button>
 
-        <button
-          className={`imgBtn modeBtn btn1 ${selected === "1V1" ? "selected" : ""}`}
-          onMouseEnter={() => setSelected("1V1")}
-          onClick={() => onOpen1v1?.()}
-        >
-          <Btn imgSrc="/assets/menu/btn_1v1.png" alt="1v1" />
-        </button>
-
-        <button
-          className={`imgBtn modeBtn btn2 ${selected === "COOP" ? "selected" : ""}`}
-          onMouseEnter={() => setSelected("COOP")}
-          onClick={() => onOpenCoop?.()}
-        >
-          <Btn imgSrc="/assets/menu/btn_coop.png" alt="Co-op Boss" />
-        </button>
-
-        <button
-          className={`imgBtn modeBtn btn3 ${selected === "ENDLESS" ? "selected" : ""}`}
-          onMouseEnter={() => setSelected("ENDLESS")}
-          onClick={() => onStartEndless?.()}
-        >
-          <Btn imgSrc="/assets/menu/btn_endless.png" alt="Endless" />
-        </button>
-
-        <div className="musicPanel">
-          {!musicOn ? (
-            <button onClick={startMusic}>Start Music</button>
-          ) : (
-            <button onClick={stopMusic}>Stop Music</button>
-          )}
-          <span style={{ color: "#fff", opacity: 0.9 }}>Vol</span>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
+          <img
+            className="menuTitle"
+            src="/assets/menu/title.png"
+            alt="Knowledge Ascension"
+            draggable="false"
           />
-        </div>
+
+          <button className="imgBtn shopBtn" onClick={() => onOpenShop?.()}>
+            <Btn imgSrc="/assets/menu/btn_shop.png" alt="Shop" />
+          </button>
+
+          <button
+            className="imgBtn dailyBtn"
+            onClick={() => onOpenDailyTasks?.()}
+          >
+            <div className="btnWrap dailyBtnWrap">
+              <div className="goldGlow" />
+              <div className="dailyBtnPlate">Daily Tasks</div>
+            </div>
+          </button>
+
+          <button
+            className={`imgBtn modeBtn btn1 ${selected === "1V1" ? "selected" : ""}`}
+            onMouseEnter={() => setSelected("1V1")}
+            onClick={() => onOpen1v1?.()}
+          >
+            <Btn imgSrc="/assets/menu/btn_1v1.png" alt="1v1" />
+          </button>
+
+          <button
+            className={`imgBtn modeBtn btn2 ${selected === "COOP" ? "selected" : ""}`}
+            onMouseEnter={() => setSelected("COOP")}
+            onClick={() => onOpenCoop?.()}
+          >
+            <Btn imgSrc="/assets/menu/btn_coop.png" alt="Co-op Boss" />
+          </button>
+
+          <button
+            className={`imgBtn modeBtn btn3 ${selected === "ENDLESS" ? "selected" : ""}`}
+            onMouseEnter={() => setSelected("ENDLESS")}
+            onClick={() => onStartEndless?.()}
+          >
+            <Btn imgSrc="/assets/menu/btn_endless.png" alt="Endless" />
+          </button>
+
+          <div className="musicPanel">
+            {!musicOn ? (
+              <button onClick={startMusic}>Start Music</button>
+            ) : (
+              <button onClick={stopMusic}>Stop Music</button>
+            )}
+            <span style={{ color: "#fff", opacity: 0.9 }}>Vol</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+            />
+          </div>
       </div>
     </div>
   );

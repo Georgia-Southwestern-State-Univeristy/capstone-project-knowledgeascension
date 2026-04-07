@@ -33,19 +33,19 @@
   --maskTop: 14%;
   --maskBottom: 14%;
 
-  --rowSpriteCol: 260px;
-  --spriteImgW: 200px;
+  --rowSpriteCol: clamp(150px, 16vw, 230px);
+  --spriteImgW: clamp(110px, 11vw, 180px);
 
   --nameFont: 30px;
   --metaFont: 18px;
 
-  --actionBtnW: 350px;
+  --actionBtnW: clamp(120px, 16vw, 210px);
 
   --rowPadY: 18px;
   --rowGap: 18px;
 
   /* Stat bar sizing */
-  --statTrackW: 260px;
+  --statTrackW: min(100%, 260px);
   --statTrackH: 12px;
   --statLabelW: 58px;
   --statNumW: 34px;
@@ -172,30 +172,39 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 /* Header / Footer */
 .paperHeader{
   padding: 14px 12px 8px 12px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   gap: 16px;
+  min-width: 0;
 }
 
 .paperHeaderTitle{
+  grid-column: 2;
   font-size: 46px;
   font-weight: 900;
   color: #2b1a0a;
   text-shadow: 0 2px 10px rgba(0,0,0,0.16);
+  margin-left: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .paperMsg{
+  grid-column: 3;
+  justify-self: end;
   font-size: 16px;
   font-weight: 800;
   color: #2b1a0a;
   opacity: 0.95;
   text-align: right;
+  max-width: 40%;
 }
 
 .paperMsg.muted{ opacity: 0.0; }
@@ -212,6 +221,7 @@
 .paperScroll{
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 2px 12px 0 12px;
 }
 
@@ -233,6 +243,7 @@
   align-items: center;
   padding: var(--rowPadY) 6px;
   border-top: 1px solid rgba(43,26,10,0.14);
+  min-width: 0;
 }
 
 .shopRow:first-child{ border-top: none; }
@@ -240,7 +251,9 @@
 .shopCharPreview{
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-end;
+  min-width: 0;
+  padding-right: 18px;
 }
 
 .shopCharPreview img{
@@ -249,6 +262,7 @@
   image-rendering: pixelated;
   user-select: none;
   -webkit-user-drag: none;
+  transform: translateX(10px);
 }
 
 /* Updated: 2-column inside the right side:
@@ -257,10 +271,11 @@
 */
 .shopCharInfo{
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto auto;
   gap: 10px 16px;
   align-items: center;
+  min-width: 0;
 }
 
 .shopCharName{
@@ -269,16 +284,20 @@
   font-weight: 900;
   color: #2b1a0a;
   text-shadow: 0 2px 10px rgba(0,0,0,0.10);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .shopCharMeta{
   grid-column: 1 / 2;
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   align-items: center;
   color: #2b1a0a;
   font-size: var(--metaFont);
   font-weight: 800;
+  min-width: 0;
 }
 
 .shopPriceWithCoin{
@@ -324,13 +343,15 @@
   border-radius: 12px;
   background: rgba(255,255,255,0.18);
   border: 1px solid rgba(43,26,10,0.12);
+  min-width: 0;
 }
 
 .shopStatRow{
   display: grid;
-  grid-template-columns: var(--statLabelW) var(--statTrackW) var(--statNumW);
+  grid-template-columns: var(--statLabelW) minmax(0, 1fr) var(--statNumW);
   gap: 10px;
   align-items: center;
+  min-width: 0;
 }
 
 .shopStatLabel{
@@ -368,6 +389,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 0;
 }
 
 .shopImgBtn{
@@ -388,6 +410,7 @@
 .shopImgBtn img{
   display: block;
   width: var(--actionBtnW);
+  max-width: 100%;
   height: auto;
   user-select: none;
   -webkit-user-drag: none;
@@ -428,4 +451,149 @@
 .shopImgBtn:disabled:hover{
   transform: none;
   filter: none;
+}
+
+@media (max-width: 1280px){
+  :root{
+    --shopIconW: 420px;
+    --shopIconH: 120px;
+    --coinsFont: 28px;
+    --coinIconSize: 40px;
+    --maskLeft: 18%;
+    --maskRight: 17%;
+    --nameFont: 26px;
+    --metaFont: 16px;
+    --rowGap: 14px;
+    --rowSpriteCol: clamp(145px, 18vw, 220px);
+    --spriteImgW: clamp(105px, 12vw, 170px);
+    --actionBtnW: clamp(115px, 15vw, 180px);
+  }
+}
+
+@media (max-width: 1024px){
+  :root{
+    --menuBtnLeft: 20px;
+    --menuBtnTop: 18px;
+    --menuBtnWidth: 120px;
+    --shopIconTop: 16px;
+    --shopIconW: 320px;
+    --shopIconH: 96px;
+    --coinsRight: 20px;
+    --coinsTop: 18px;
+    --coinsFont: 22px;
+    --coinIconSize: 32px;
+    --scrollH: min(900px, 82vh);
+    --maskLeft: 15%;
+    --maskRight: 14%;
+    --maskTop: 13%;
+    --maskBottom: 13%;
+    --nameFont: 22px;
+    --metaFont: 15px;
+    --rowSpriteCol: clamp(140px, 22vw, 200px);
+    --spriteImgW: clamp(100px, 15vw, 150px);
+    --actionBtnW: clamp(110px, 18vw, 160px);
+  }
+
+  .paperHeader{
+    align-items: flex-start;
+  }
+
+  .paperMsg{
+    max-width: 48%;
+    font-size: 14px;
+  }
+
+  .shopRow{
+    grid-template-columns: 1fr;
+  }
+
+  .shopCharInfo{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    justify-items: stretch;
+  }
+
+  .shopActions{
+    grid-column: 1 / 2;
+    grid-row: auto;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px){
+  :root{
+    --shopIconW: 220px;
+    --shopIconH: 70px;
+    --coinsFont: 16px;
+    --coinIconSize: 24px;
+    --scrollTop: 54%;
+    --scrollH: min(760px, 80vh);
+    --maskLeft: 10%;
+    --maskRight: 10%;
+    --maskTop: 12%;
+    --maskBottom: 12%;
+    --nameFont: 18px;
+    --metaFont: 13px;
+    --rowSpriteCol: 1fr;
+    --spriteImgW: min(140px, 38vw);
+    --actionBtnW: min(125px, 100%);
+    --rowPadY: 14px;
+  }
+
+  .shopCoins{
+    max-width: 42vw;
+  }
+
+  .paperHeader{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .paperHeaderTitle{
+    font-size: 30px;
+    white-space: normal;
+  }
+
+  .paperMsg{
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .paperFooter{
+    font-size: 14px;
+  }
+
+  .shopCharMeta{
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .shopPriceWithCoin{
+    margin-left: 6px;
+    padding: 4px 8px;
+  }
+
+  .shopStatBars{
+    padding: 8px;
+  }
+
+  .shopStatRow{
+    grid-template-columns: 44px minmax(0, 1fr) 28px;
+    gap: 8px;
+  }
+
+  .shopStatLabel,
+  .shopStatNum{
+    font-size: 12px;
+  }
+
+  .shopCharPreview{
+    justify-content: center;
+    padding-right: 0;
+  }
+
+  .shopCharPreview img{
+    transform: translateX(8px);
+  }
 }
