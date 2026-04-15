@@ -11,29 +11,29 @@
 
   --v1EnemyX: 62%;
   --v1EnemyY: 44%;
-  --v1EnemyW: 520px;
+  --v1EnemyW: 400px;
 
-  --v1MeX: 35%;
+  --v1MeX: 30%;
   --v1MeY: 62%;
-  --v1MeW: 760px;
+  --v1MeW: 650px;
 
   --v1QX: 50%;
   --v1QY: 84%;
   --v1QW: min(1280px, 96vw);
 
-  --v1QTextX: 150px;
-  --v1QTextY: 180px;
+  --v1QTextX: 90px;
+  --v1QTextY: 190px;
   --v1QTextW: 62%;
   --v1QTextH: 260px;
   --v1QFont: 26px;
 
-  --v1AnsX: 760px;
-  --v1AnsY: 230px;
+  --v1AnsX: 950px;
+  --v1AnsY: 265px;
   --v1AnsW: 20%;
-  --v1AnsGap: 10px;
+  --v1AnsGap: 5px;
   --v1AnsFont: 18px;
 
-  --v1Blur: 6px;
+  --v1Blur: 1px;
 }
 
 .v1GameRoot{

@@ -24,7 +24,9 @@ app.use(cors({ origin: true, credentials: false }));
 app.use(express.json({ limit: "2mb" }));
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: true, methods: ["GET", "POST"] } });
+const io = new Server(server, {
+  cors: { origin: true, methods: ["GET", "POST"] },
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -40,17 +42,20 @@ function makeCode() {
   for (let i = 0; i < 6; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
   return out;
 }
+
 function createUniqueCode(map) {
   let code = makeCode();
   while (map.has(code)) code = makeCode();
   return code;
 }
+
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
 function normalizeQuestion(q) {
   if (!q) return null;
+
   const text = String(q.text || "").trim();
   const a = String(q.a || "").trim();
   const b = String(q.b || "").trim();
@@ -81,13 +86,17 @@ async function extractPdf(buf) {
   const out = await pdf(buf);
   return String(out?.text || "");
 }
+
 async function extractDocx(buf) {
   const out = await mammoth.extractRawText({ buffer: buf });
   return String(out?.value || "");
 }
+
 async function extractPptx(buf) {
   const zip = await JSZip.loadAsync(buf);
-  const slides = Object.keys(zip.files).filter((k) => k.startsWith("ppt/slides/slide") && k.endsWith(".xml"));
+  const slides = Object.keys(zip.files).filter(
+    (k) => k.startsWith("ppt/slides/slide") && k.endsWith(".xml")
+  );
 
   let all = "";
   for (const s of slides) {
@@ -96,12 +105,13 @@ async function extractPptx(buf) {
   }
   return all;
 }
+
 function cleanText(t) {
   return String(t || "").replace(/\s+/g, " ").trim().slice(0, 18000);
 }
 
 /* =========================================================
-   Gemini generation (supports progress callback)
+   Gemini generation
 ========================================================= */
 function makeGeminiPrompt(studyText, count, seedHint) {
   return (
@@ -166,8 +176,7 @@ async function generateQuestionsGemini(text, opts) {
         break;
       } catch (e) {
         lastErr = e;
-        const backoff = 300 + attempt * 500;
-        await sleep(backoff);
+        await sleep(300 + attempt * 500);
       }
     }
 
@@ -198,7 +207,7 @@ async function generateQuestionsGemini(text, opts) {
 }
 
 /* =========================================================
-   CO-OP (existing)
+   CO-OP
 ========================================================= */
 const rooms = new Map();
 
@@ -206,6 +215,7 @@ function roomPublic(room) {
   return {
     code: room.code,
     started: room.started,
+    ended: room.ended,
     bossHp: room.bossHp,
     timerMs: room.timerMs,
     players: room.players.map((p) => ({
@@ -218,22 +228,27 @@ function roomPublic(room) {
     questionCount: room.questions.length,
   };
 }
+
 function sendRoomState(room) {
   io.to(room.code).emit("coop:room_state", roomPublic(room));
 }
+
 function roomError(socket, message) {
   socket.emit("coop:error", { message });
 }
+
 function pickNextQuestion(room) {
   if (!room.questions.length) return null;
   room.qIndex = (room.qIndex + 1) % room.questions.length;
   return room.questions[room.qIndex];
 }
+
 function getCurrentQuestion(room) {
   if (!room.questions.length) return null;
   if (room.qIndex < 0 || room.qIndex >= room.questions.length) room.qIndex = 0;
   return room.questions[room.qIndex];
 }
+
 function endRoom(room, reason) {
   if (room.ended) return;
   room.ended = true;
@@ -245,25 +260,26 @@ function endRoom(room, reason) {
   }
 
   io.to(room.code).emit("coop:ended", { reason });
+  sendRoomState(room);
 }
+
 function allDead(room) {
   return room.players.every((p) => p.hp <= 0);
 }
 
 /* =========================================================
-   1v1 (NEW)
+   1v1
 ========================================================= */
 const v1Rooms = new Map();
 
-// Server-side character stats (must match client list)
 const CHARACTER_STATS = {
-  archer:   { health: 65, damage: 24, loot: 45 },
-  beggar:   { health: 55, damage: 14, loot: 95 },
-  fairy:    { health: 60, damage: 20, loot: 80 },
-  king:     { health: 95, damage: 16, loot: 20 },
-  knight:   { health: 78, damage: 22, loot: 40 },
+  archer: { health: 65, damage: 24, loot: 45 },
+  beggar: { health: 55, damage: 14, loot: 95 },
+  fairy: { health: 60, damage: 20, loot: 80 },
+  king: { health: 95, damage: 16, loot: 20 },
+  knight: { health: 78, damage: 22, loot: 40 },
   merchant: { health: 70, damage: 18, loot: 90 },
-  orc:      { health: 80, damage: 26, loot: 15 },
+  orc: { health: 80, damage: 26, loot: 15 },
   sorcerer: { health: 55, damage: 30, loot: 35 },
 };
 
@@ -272,15 +288,16 @@ function clampId(id) {
   return CHARACTER_STATS[k] ? k : "knight";
 }
 
-// Gameplay mapping (now directly stat-driven, and differences stand out)
 function calcHpMax(equippedId) {
   const st = CHARACTER_STATS[clampId(equippedId)];
   return Math.max(1, Math.round(st.health * 12));
 }
+
 function calcDamage(equippedId) {
   const st = CHARACTER_STATS[clampId(equippedId)];
   return Math.max(1, Math.round(st.damage * 1.6));
 }
+
 function lootChance(equippedId) {
   const st = CHARACTER_STATS[clampId(equippedId)];
   return Math.max(0, Math.min(100, Number(st.loot || 0)));
@@ -330,19 +347,6 @@ function v1InitQuestionStream(room, player) {
   player.curQIndex = order[0] ?? 0;
 }
 
-function v1NextQuestion(room, player) {
-  const n = room.questions.length;
-  if (!n) return null;
-
-  player.qPtr = player.qPtr + 1;
-  if (player.qPtr >= player.qOrder.length) {
-    player.qOrder = shuffle([...Array(n).keys()]);
-    player.qPtr = 0;
-  }
-  player.curQIndex = player.qOrder[player.qPtr] ?? 0;
-  return room.questions[player.curQIndex] || null;
-}
-
 function v1CurrentQuestion(room, player) {
   const n = room.questions.length;
   if (!n) return null;
@@ -350,21 +354,42 @@ function v1CurrentQuestion(room, player) {
   return room.questions[idx] || null;
 }
 
+function v1NextQuestion(room, player) {
+  const n = room.questions.length;
+  if (!n) return null;
+
+  player.qPtr += 1;
+  if (player.qPtr >= player.qOrder.length) {
+    player.qOrder = shuffle([...Array(n).keys()]);
+    player.qPtr = 0;
+  }
+
+  player.curQIndex = player.qOrder[player.qPtr] ?? 0;
+  return room.questions[player.curQIndex] || null;
+}
+
 /* =========================================================
    Socket.io
 ========================================================= */
 io.on("connection", (socket) => {
   /* --------------------------
-     CO-OP sockets (existing)
-  --------------------------- */
-  socket.on("coop:request_question", ({ code }) => {
-  const c = String(code || "").trim().toUpperCase();
-  const room = rooms.get(c);
-  if (!room || !room.started || room.ended) return;
+     CO-OP
+  -------------------------- */
+  socket.on("coop:request_state", ({ code }) => {
+    const c = String(code || "").trim().toUpperCase();
+    const room = rooms.get(c);
+    if (!room) return;
+    io.to(socket.id).emit("coop:room_state", roomPublic(room));
+  });
 
-  const q = getCurrentQuestion(room);
-  io.to(socket.id).emit("coop:question", { q });
-});
+  socket.on("coop:request_question", ({ code }) => {
+    const c = String(code || "").trim().toUpperCase();
+    const room = rooms.get(c);
+    if (!room || !room.started || room.ended) return;
+
+    const q = getCurrentQuestion(room);
+    io.to(socket.id).emit("coop:question", { q });
+  });
 
   socket.on("coop:create_room", ({ name, equipped }) => {
     const n = String(name || "").trim();
@@ -451,6 +476,7 @@ io.on("connection", (socket) => {
     room.ended = false;
     room.bossHp = 5000;
     room.timerMs = 5 * 60 * 1000;
+    room.qIndex = 0;
 
     for (const p of room.players) {
       p.hp = 100;
@@ -458,16 +484,16 @@ io.on("connection", (socket) => {
       p.ready = false;
     }
 
-    room.qIndex = 0;
-
     io.to(room.code).emit("coop:started", roomPublic(room));
     io.to(room.code).emit("coop:question", { q: getCurrentQuestion(room) });
+    sendRoomState(room);
 
     if (room.tick) clearInterval(room.tick);
     room.tick = setInterval(() => {
       if (!room.started || room.ended) return;
 
       room.timerMs -= 200;
+
       if (room.timerMs <= 0) {
         room.timerMs = 0;
         sendRoomState(room);
@@ -502,6 +528,7 @@ io.on("connection", (socket) => {
 
     const list = Array.isArray(questions) ? questions : [];
     const normalized = [];
+
     for (const q of list) {
       const item = normalizeQuestion(q);
       if (item) normalized.push(item);
@@ -511,73 +538,95 @@ io.on("connection", (socket) => {
 
     room.questions = normalized;
     room.qIndex = 0;
-
     sendRoomState(room);
   });
 
   socket.on("coop:submit_answer", ({ code, picked }) => {
-  const c = String(code || "").trim().toUpperCase();
-  const room = rooms.get(c);
-  if (!room || !room.started || room.ended) return;
+    const c = String(code || "").trim().toUpperCase();
+    const room = rooms.get(c);
+    if (!room || !room.started || room.ended) return;
 
-  const player = room.players.find((p) => p.id === socket.id);
-  if (!player) return;
-  if (player.hp <= 0) return;
+    const player = room.players.find((p) => p.id === socket.id);
+    if (!player) return;
+    if (player.hp <= 0) return;
 
-  const now = Date.now();
-  if (player.deadUntil && now < player.deadUntil) return;
+    const now = Date.now();
+    if (player.deadUntil && now < player.deadUntil) return;
 
-  const cur = getCurrentQuestion(room);
-  if (!cur) return;
+    const cur = getCurrentQuestion(room);
+    if (!cur) return;
 
-  const pick = String(picked || "").toLowerCase();
-  const correct = String(cur.correct || "").toLowerCase();
+    const pick = String(picked || "").toLowerCase();
+    const correct = String(cur.correct || "").toLowerCase();
 
-  if (pick === correct) {
-    const dmg = 10 + Math.floor(Math.random() * 51);
-    room.bossHp = Math.max(0, room.bossHp - dmg);
+    if (pick === correct) {
+      const dmg = 10 + Math.floor(Math.random() * 51);
+      room.bossHp = Math.max(0, room.bossHp - dmg);
 
-    const coinDrop = 1;
-    io.to(room.code).emit("coop:hit", {
-      playerId: socket.id,
-      damage: dmg,
-      coinDrop,
-    });
-  } else {
-    player.hp = Math.max(0, player.hp - 10);
+      io.to(room.code).emit("coop:hit", {
+        playerId: socket.id,
+        damage: dmg,
+        coinDrop: 1,
+      });
+    } else {
+      player.hp = Math.max(0, player.hp - 10);
 
-    io.to(room.code).emit("coop:player_hurt", {
-      playerId: socket.id,
-      hp: player.hp,
-    });
+      io.to(room.code).emit("coop:player_hurt", {
+        playerId: socket.id,
+        hp: player.hp,
+      });
 
-    if (player.hp === 0) {
-      player.deadUntil = Date.now() + 5000;
+      if (player.hp === 0) {
+        player.deadUntil = Date.now() + 5000;
+      }
     }
-  }
 
-  const next = pickNextQuestion(room);
-  io.to(room.code).emit("coop:question", { q: next });
+    const next = pickNextQuestion(room);
+    io.to(room.code).emit("coop:question", { q: next });
+    sendRoomState(room);
 
-  sendRoomState(room);
+    if (room.bossHp <= 0) endRoom(room, "win");
+    else if (allDead(room)) endRoom(room, "all_dead");
+  });
 
-  if (room.bossHp <= 0) endRoom(room, "win");
-  else if (allDead(room)) endRoom(room, "all_dead");
-});
+  socket.on("coop:respawn", ({ code }) => {
+    const c = String(code || "").trim().toUpperCase();
+    const room = rooms.get(c);
+    if (!room || !room.started || room.ended) return;
+
+    const p = room.players.find((x) => x.id === socket.id);
+    if (!p) return;
+
+    const now = Date.now();
+    if (p.hp > 0) return;
+    if (p.deadUntil && now < p.deadUntil) return;
+
+    p.hp = 100;
+    p.deadUntil = 0;
+    sendRoomState(room);
+  });
+
   /* --------------------------
-     1v1 sockets
-  --------------------------- */
+     1v1
+  -------------------------- */
+  socket.on("onevone:request_state", ({ code }) => {
+    const c = String(code || "").trim().toUpperCase();
+    const room = v1Rooms.get(c);
+    if (!room) return;
+    io.to(socket.id).emit("onevone:state", v1Public(room));
+  });
+
   socket.on("onevone:request_question", ({ code }) => {
-  const c = String(code || "").trim().toUpperCase();
-  const room = v1Rooms.get(c);
-  if (!room || !room.started || room.ended) return;
+    const c = String(code || "").trim().toUpperCase();
+    const room = v1Rooms.get(c);
+    if (!room || !room.started || room.ended) return;
 
-  const p = room.players.find((x) => x.id === socket.id);
-  if (!p) return;
+    const p = room.players.find((x) => x.id === socket.id);
+    if (!p) return;
 
-  const q = v1CurrentQuestion(room, p);
-  io.to(p.id).emit("onevone:question", { q });
-});
+    const q = v1CurrentQuestion(room, p);
+    io.to(p.id).emit("onevone:question", { q });
+  });
 
   socket.on("onevone:create_room", ({ name, equipped }) => {
     const n = String(name || "").trim();
@@ -681,17 +730,18 @@ io.on("connection", (socket) => {
 
     const list = Array.isArray(questions) ? questions : [];
     const normalized = [];
+
     for (const q of list) {
       const item = normalizeQuestion(q);
       if (item) normalized.push(item);
     }
+
     if (!normalized.length) return v1Error(socket, "No valid questions detected.");
 
     room.questions = normalized;
     room.started = false;
     room.ended = false;
     room.winnerId = "";
-
     v1SendState(room);
   });
 
@@ -723,8 +773,7 @@ io.on("connection", (socket) => {
     io.to(room.code).emit("onevone:started", v1Public(room));
 
     for (const p of room.players) {
-      const q = v1CurrentQuestion(room, p);
-      io.to(p.id).emit("onevone:question", { q });
+      io.to(p.id).emit("onevone:question", { q: v1CurrentQuestion(room, p) });
     }
   });
 
@@ -749,13 +798,11 @@ io.on("connection", (socket) => {
       const dmg = calcDamage(me.equipped);
       enemy.hp = Math.max(0, enemy.hp - dmg);
 
-      // Loot: chance to earn +1 coin on a correct answer
-      const roll = Math.floor(Math.random() * 100) + 1; // 1..100
+      const roll = Math.floor(Math.random() * 100) + 1;
       if (roll <= lootChance(me.equipped)) {
         io.to(me.id).emit("onevone:loot", { amount: 1 });
       }
     } else {
-      // Wrong answer penalty (keeps pressure)
       me.hp = Math.max(0, me.hp - 10);
     }
 
@@ -767,6 +814,7 @@ io.on("connection", (socket) => {
       io.to(room.code).emit("onevone:ended", { reason: "win", winner: me.id });
       return;
     }
+
     if (me.hp <= 0) {
       room.ended = true;
       room.started = false;
@@ -776,13 +824,14 @@ io.on("connection", (socket) => {
       return;
     }
 
-    const next = v1NextQuestion(room, me);
-    io.to(me.id).emit("onevone:question", { q: next });
+    io.to(me.id).emit("onevone:question", { q: v1NextQuestion(room, me) });
     v1SendState(room);
   });
 
+  /* --------------------------
+     Disconnect cleanup
+  -------------------------- */
   socket.on("disconnect", () => {
-    // coop rooms
     for (const room of rooms.values()) {
       const idx = room.players.findIndex((p) => p.id === socket.id);
       if (idx === -1) continue;
@@ -791,21 +840,22 @@ io.on("connection", (socket) => {
       room.players.splice(idx, 1);
 
       if (!room.players.length) {
-        endRoom(room, "host_left");
+        if (room.tick) clearInterval(room.tick);
         rooms.delete(room.code);
         continue;
       }
 
-      if (wasHost) endRoom(room, "host_left");
-      else sendRoomState(room);
+      if (wasHost) {
+        endRoom(room, "host_left");
+      } else {
+        sendRoomState(room);
+      }
     }
 
-    // 1v1 rooms
     for (const room of v1Rooms.values()) {
       const idx = room.players.findIndex((p) => p.id === socket.id);
       if (idx === -1) continue;
 
-      const wasHost = idx === 0;
       room.players.splice(idx, 1);
 
       if (!room.players.length) {
@@ -817,9 +867,10 @@ io.on("connection", (socket) => {
       room.started = false;
       room.winnerId = room.players[0]?.id || "";
       v1SendState(room);
-      io.to(room.code).emit("onevone:ended", { reason: "opponent_left", winner: room.winnerId });
-
-      if (wasHost) v1Rooms.delete(room.code);
+      io.to(room.code).emit("onevone:ended", {
+        reason: "opponent_left",
+        winner: room.winnerId,
+      });
     }
   });
 });
@@ -830,11 +881,17 @@ io.on("connection", (socket) => {
 app.post("/api/coop/upload", upload.single("file"), async (req, res) => {
   try {
     const code = String(req.body?.code || "").trim().toUpperCase();
-    if (!rooms.has(code)) return res.status(400).json({ error: "Room not found. Create the room first." });
-    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+    if (!rooms.has(code)) {
+      return res.status(400).json({ error: "Room not found. Create the room first." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
 
     const text = await extractAny(req.file);
-    if (text.length < 50) return res.status(400).json({ error: "Not enough readable text found in the file." });
+    if (text.length < 50) {
+      return res.status(400).json({ error: "Not enough readable text found in the file." });
+    }
 
     const questions = await generateQuestionsGemini(text, {
       targetCount: GEMINI_TARGET_COUNT,
@@ -849,10 +906,14 @@ app.post("/api/coop/upload", upload.single("file"), async (req, res) => {
 
 app.post("/api/endless/upload", upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
 
     const text = await extractAny(req.file);
-    if (text.length < 50) return res.status(400).json({ error: "Not enough readable text found in the file." });
+    if (text.length < 50) {
+      return res.status(400).json({ error: "Not enough readable text found in the file." });
+    }
 
     const questions = await generateQuestionsGemini(text, {
       targetCount: GEMINI_TARGET_COUNT,
@@ -869,11 +930,17 @@ app.post("/api/onevone/upload", upload.single("file"), async (req, res) => {
   try {
     const code = String(req.body?.code || "").trim().toUpperCase();
     const room = v1Rooms.get(code);
-    if (!room) return res.status(400).json({ error: "Room not found. Create the room first." });
-    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
+    if (!room) {
+      return res.status(400).json({ error: "Room not found. Create the room first." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
 
     const text = await extractAny(req.file);
-    if (text.length < 50) return res.status(400).json({ error: "Not enough readable text found in the file." });
+    if (text.length < 50) {
+      return res.status(400).json({ error: "Not enough readable text found in the file." });
+    }
 
     const questions = await generateQuestionsGemini(text, {
       targetCount: GEMINI_TARGET_COUNT,

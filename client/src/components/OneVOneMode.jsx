@@ -1,19 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./onevone.css";
-import { io } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { getFolderNameFromId } from "../db/characters";
 import { recordDailyStat } from "../game/dailyTasks.js";
 import AnimatedCharacter from "./AnimatedCharacter.jsx";
+import { getOneVOneSocket } from "../net/onevoneSocket.js";
 
 const UI = {
   YOU_DIED: "/assets/ui/you_died.png",
 };
-
-function getServerBase() {
-  const host = window.location.hostname;
-  return `http://${host}:5175`;
-}
 
 function safeLower(v) {
   return String(v || "").trim().toLowerCase();
@@ -22,7 +17,6 @@ function safeLower(v) {
 export default function OneVOneMode({ room, onBackToMenu }) {
   const { profile, addCoins, username } = useAuth();
 
-  const apiBase = useMemo(() => getServerBase(), []);
   const socketRef = useRef(null);
 
   const [socketId, setSocketId] = useState("");
@@ -49,31 +43,29 @@ export default function OneVOneMode({ room, onBackToMenu }) {
   const triggerMeAttack = () => {
     if (meAttackTimerRef.current) clearTimeout(meAttackTimerRef.current);
     setMeAction("attack");
-    meAttackTimerRef.current = setTimeout(() => {
-      setMeAction("idle");
-    }, 420);
+    meAttackTimerRef.current = setTimeout(() => setMeAction("idle"), 420);
   };
 
   const triggerEnemyAttack = () => {
     if (enemyAttackTimerRef.current) clearTimeout(enemyAttackTimerRef.current);
     setEnemyAction("attack");
-    enemyAttackTimerRef.current = setTimeout(() => {
-      setEnemyAction("idle");
-    }, 420);
+    enemyAttackTimerRef.current = setTimeout(() => setEnemyAction("idle"), 420);
   };
 
   useEffect(() => {
     if (!roomCode) return;
 
-    const s = io(apiBase, { transports: ["websocket"] });
+    const s = getOneVOneSocket();
     socketRef.current = s;
 
-    s.on("connect", () => {
+    const onConnect = () => {
       setSocketId(s.id);
       s.emit("onevone:update_equipped", { code: roomCode, equipped });
-    });
+      s.emit("onevone:request_state", { code: roomCode });
+      s.emit("onevone:request_question", { code: roomCode });
+    };
 
-    s.on("onevone:state", (st) => {
+    const onState = (st) => {
       setState(st);
 
       const me = st?.players?.find((p) => p.id === s.id);
@@ -81,7 +73,6 @@ export default function OneVOneMode({ room, onBackToMenu }) {
 
       const meHp = me ? Number(me.hp ?? 0) : null;
       const enHp = enemy ? Number(enemy.hp ?? 0) : null;
-
       const prev = prevHpRef.current;
 
       if (prev.me != null && meHp != null && meHp < prev.me) {
@@ -113,16 +104,35 @@ export default function OneVOneMode({ room, onBackToMenu }) {
         if (username) {
           recordDailyStat(username, "onevoneMatches", 1);
         }
+
+        s.emit("onevone:request_question", { code: roomCode });
       }
 
       if (!st?.started && !endReason) {
         startedTrackedRef.current = false;
       }
-    });
+    };
 
-    s.on("onevone:question", (payload) => setQ(payload?.q || null));
+    const onQuestion = (payload) => {
+      setQ(payload?.q || null);
+    };
 
-    s.on("onevone:loot", async (payload) => {
+    const onStarted = (st) => {
+      setEndReason("");
+      setState(st);
+      setCoinsEarned(0);
+      setCorrectCount(0);
+      startedTrackedRef.current = true;
+      winTrackedRef.current = false;
+
+      if (username) {
+        recordDailyStat(username, "onevoneMatches", 1);
+      }
+
+      s.emit("onevone:request_question", { code: roomCode });
+    };
+
+    const onLoot = async (payload) => {
       const amount = Math.max(0, Number(payload?.amount || 0));
       if (!amount) return;
 
@@ -135,9 +145,9 @@ export default function OneVOneMode({ room, onBackToMenu }) {
       try {
         await addCoins(amount);
       } catch {}
-    });
+    };
 
-    s.on("onevone:ended", async (payload) => {
+    const onEnded = async (payload) => {
       const reason = String(payload?.reason || "ended");
       setEndReason(reason);
 
@@ -154,15 +164,29 @@ export default function OneVOneMode({ room, onBackToMenu }) {
           await addCoins(50);
         } catch {}
       }
-    });
+    };
+
+    s.on("connect", onConnect);
+    s.on("onevone:state", onState);
+    s.on("onevone:question", onQuestion);
+    s.on("onevone:started", onStarted);
+    s.on("onevone:loot", onLoot);
+    s.on("onevone:ended", onEnded);
+
+    if (s.connected) onConnect();
 
     return () => {
       if (meAttackTimerRef.current) clearTimeout(meAttackTimerRef.current);
       if (enemyAttackTimerRef.current) clearTimeout(enemyAttackTimerRef.current);
-      try { s.disconnect(); } catch {}
-      socketRef.current = null;
+
+      s.off("connect", onConnect);
+      s.off("onevone:state", onState);
+      s.off("onevone:question", onQuestion);
+      s.off("onevone:started", onStarted);
+      s.off("onevone:loot", onLoot);
+      s.off("onevone:ended", onEnded);
     };
-  }, [apiBase, roomCode, equipped, addCoins, username, endReason]);
+  }, [roomCode, equipped, addCoins, username, endReason]);
 
   const started = !!state?.started;
 
@@ -268,7 +292,7 @@ export default function OneVOneMode({ room, onBackToMenu }) {
           ) : !q ? (
             <div className="v1Center">
               <div className="v1Title">Loading your question…</div>
-              <div className="v1Sub">If it takes long, host may not have uploaded yet.</div>
+              <div className="v1Sub">Preparing duel prompt…</div>
             </div>
           ) : (
             <>

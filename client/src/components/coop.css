@@ -27,9 +27,9 @@
   --bossY: 30%;
   --bossW: 420px;
 
-  --playersX: 50%;
-  --playersY: 60%;
-  --playerSpriteW: 175px;
+  --playersX: 40%;
+  --playersY: 65%;
+  --playerSpriteW: 375px;
   --playerGap: 44px;
   --playerMinW: 170px;
 
@@ -42,16 +42,16 @@
   --qPadBottom: 34px;
   --qPadLeft: 54px;
 
-  --qTextX: 70px;
-  --qTextY: 150px;
+  --qTextX: 100px;
+  --qTextY: 200px;
   --qTextW: 62%;
   --qTextH: 220px;
   --qFont: 25px;
 
-  --ansX: 760px;
-  --ansY: 230px;
+  --ansX: 950px;
+  --ansY: 295px;
   --ansW: 20%;
-  --ansH: 260px;
+  --ansH: 250px;
   --ansGap: 10px;
   --ansPadY: 1px;
   --ansPadX: 15px;
