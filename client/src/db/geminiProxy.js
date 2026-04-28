@@ -1,7 +1,7 @@
 function getCoopServerBase() {
   // Manual: if you ever want to hardcode a LAN IP, change it here.
   const host = window.location.hostname;
-  return `http://${host}:5175`;
+  return import.meta.env.VITE_SERVER_URL || "https://capstone-project-knowledgeascension-iba4vpbje.vercel.app";
 }
 
 export async function uploadStudyFileToServer({ code, file }) {
