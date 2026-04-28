@@ -19,13 +19,15 @@ const GEMINI_BATCH_SIZE = Math.max(5, Number(process.env.GEMINI_BATCH_SIZE || 20
 const GEMINI_BATCH_DELAY_MS = Math.max(0, Number(process.env.GEMINI_BATCH_DELAY_MS || 350));
 const GEMINI_MAX_RETRIES = Math.max(0, Number(process.env.GEMINI_MAX_RETRIES || 4));
 
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+
 const app = express();
-app.use(cors({ origin: true, credentials: false }));
+app.use(cors({ origin: CLIENT_URL, credentials: false }));
 app.use(express.json({ limit: "2mb" }));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: true, methods: ["GET", "POST"] },
+  cors: { origin: CLIENT_URL, methods: ["GET", "POST"] },
 });
 
 const upload = multer({

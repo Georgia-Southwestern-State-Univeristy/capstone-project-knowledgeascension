@@ -285,3 +285,144 @@ button:disabled{
   color: #ffd0d0;
   font-weight: 900;
 }
+/* =========================================================
+   MOBILE LANDSCAPE SAFETY LAYER
+   Add this at the BOTTOM of each major CSS file.
+   ========================================================= */
+
+html,
+body,
+#root{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  background:#000;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+}
+
+button,
+input,
+label{
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (orientation: portrait) and (max-width: 900px){
+  body::before{
+    content:"Rotate your device to landscape";
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:28px;
+    background:#000;
+    color:#fff;
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:0.3px;
+  }
+
+  #root{
+    pointer-events:none;
+    filter:brightness(0.35);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px){
+  button,
+  .primary,
+  .secondary,
+  .fileBtn,
+  .respawnBtn,
+  .v1Exit,
+  .coopExit,
+  .coopBack,
+  .onevoneBack,
+  .dailyBackBtn,
+  .endMenuBtn,
+  .endBackBtn{
+    min-height:38px;
+    font-size:13px;
+    padding:8px 11px;
+  }
+}
+/* =========================================================
+   1V1 LOBBY MOBILE LANDSCAPE OPTIMIZATION
+   ========================================================= */
+
+@media (orientation: landscape) and (max-height:520px){
+  .onevoneHud{
+    padding:12px 14px;
+    gap:14px;
+    grid-template-columns:1fr 1fr;
+    align-items:stretch;
+  }
+
+  .onevoneBack{
+    left:12px;
+    top:10px;
+    padding:8px 11px;
+  }
+
+  .onevoneLeftPanel,
+  .onevoneRightPanel{
+    margin-top:40px;
+    min-height:0;
+    height:calc(100vh - 58px);
+    padding:12px;
+    border-radius:16px;
+    overflow:auto;
+  }
+
+  .panelTitle{
+    font-size:18px;
+    margin-bottom:8px;
+  }
+
+  .panelSmall,
+  .panelHint{
+    font-size:12px;
+  }
+
+  .modeTabs{
+    gap:7px;
+    padding:4px;
+  }
+
+  .tab{
+    padding:8px 10px;
+  }
+
+  .row{
+    margin-top:8px;
+    gap:5px;
+  }
+
+  .row input{
+    padding:8px 9px;
+    border-radius:10px;
+  }
+
+  .actions,
+  .bottomActions{
+    gap:7px;
+    margin-top:8px;
+  }
+
+  .playerList{
+    margin-top:8px;
+    gap:7px;
+  }
+
+  .dropZone{
+    padding:12px;
+  }
+
+  .dropText{
+    font-size:14px;
+  }
+}

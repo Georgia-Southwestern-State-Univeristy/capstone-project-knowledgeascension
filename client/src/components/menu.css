@@ -423,3 +423,122 @@
 .phoneLayout .musicPanel input{
   width:110px;
 }
+/* =========================================================
+   MOBILE LANDSCAPE SAFETY LAYER
+   Add this at the BOTTOM of each major CSS file.
+   ========================================================= */
+
+html,
+body,
+#root{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  background:#000;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+}
+
+button,
+input,
+label{
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (orientation: portrait) and (max-width: 900px){
+  body::before{
+    content:"Rotate your device to landscape";
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:28px;
+    background:#000;
+    color:#fff;
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:0.3px;
+  }
+
+  #root{
+    pointer-events:none;
+    filter:brightness(0.35);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px){
+  button,
+  .primary,
+  .secondary,
+  .fileBtn,
+  .respawnBtn,
+  .v1Exit,
+  .coopExit,
+  .coopBack,
+  .onevoneBack,
+  .dailyBackBtn,
+  .endMenuBtn,
+  .endBackBtn{
+    min-height:38px;
+    font-size:13px;
+    padding:8px 11px;
+  }
+}
+/* =========================================================
+   MAIN MENU MOBILE LANDSCAPE OPTIMIZATION
+   ========================================================= */
+
+@media (orientation: landscape) and (max-height:520px){
+  .menuStage{
+    width:1920px;
+    height:1080px;
+  }
+
+  .loginPanel{
+    left:24px;
+    top:24px;
+    width:300px;
+    max-height:420px;
+    overflow:auto;
+  }
+
+  .menuTitle{
+    top:55px;
+    width:680px;
+  }
+
+  .shopBtn{
+    top:120px;
+    right:135px;
+    width:160px;
+  }
+
+  .dailyBtn{
+    top:215px;
+    right:115px;
+    width:205px;
+  }
+
+  .dailyBtnPlate{
+    min-height:58px;
+    font-size:24px;
+  }
+
+  .modeBtn{
+    width:430px;
+  }
+
+  .btn1{ top:285px; }
+  .btn2{ top:495px; }
+  .btn3{ top:705px; }
+
+  .musicPanel{
+    left:24px;
+    bottom:24px;
+    padding:8px 10px;
+  }
+}

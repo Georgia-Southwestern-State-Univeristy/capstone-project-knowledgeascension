@@ -162,84 +162,123 @@
   100%{ transform: translate(-50%, -50%) translate(0,0); }
 }
 
+/* =========================================================
+   1V1 QUESTION UI — LOCKED TO QUESTION FRAME
+   ========================================================= */
+
+:root{
+  --v1QX: 50%;
+  --v1QY: 84%;
+  --v1QW: 1280px;
+
+  --v1QuestionLeftPct: 7%;
+  --v1QuestionTopPct: 32%;
+  --v1QuestionWidthPct: 58%;
+  --v1QuestionHeightPct: 38%;
+  --v1QuestionFont: 26px;
+
+  --v1AnswerLeftPct: 69%;
+  --v1AnswerTopPct: 37%;
+  --v1AnswerWidthPct: 23%;
+  --v1AnswerBtnH: 42px;
+  --v1AnswerGap: 9px;
+  --v1AnswerFont: 17px;
+}
+
 .v1QuestionHud{
-  position: absolute;
-  left: var(--v1QX);
-  top: var(--v1QY);
-  transform: translate(-50%, -50%);
-  z-index: 45;
-  width: var(--v1QW);
+  position:absolute;
+  left:var(--v1QX);
+  top:var(--v1QY);
+  transform:translate(-50%, -50%);
+  z-index:45;
+  width:var(--v1QW);
 }
 
 .v1QFrame{
-  width: 100%;
-  height: auto;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-drag: none;
+  width:100%;
+  height:auto;
+  display:block;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
 }
 
 .v1QInner{
-  position: absolute;
-  inset: 0;
-  display: block;
+  position:absolute;
+  inset:0;
+  display:block;
 }
 
 .v1QText{
-  position: absolute;
-  left: var(--v1QTextX);
-  top: var(--v1QTextY);
-  width: var(--v1QTextW);
-  height: var(--v1QTextH);
-  font-weight: 900;
-  color: #2b1a0a;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.10);
-  font-size: var(--v1QFont);
-  line-height: 1.35;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
+  position:absolute;
+  left:var(--v1QuestionLeftPct);
+  top:var(--v1QuestionTopPct);
+  width:var(--v1QuestionWidthPct);
+  height:var(--v1QuestionHeightPct);
+  font-weight:900;
+  color:#2b1a0a;
+  text-shadow:0 2px 10px rgba(0,0,0,0.10);
+  font-size:var(--v1QuestionFont);
+  line-height:1.22;
+  overflow:hidden;
+  display:-webkit-box;
+  -webkit-line-clamp:4;
+  -webkit-box-orient:vertical;
 }
 
 .v1AnsCol{
-  position: absolute;
-  left: var(--v1AnsX);
-  top: var(--v1AnsY);
-  width: var(--v1AnsW);
-  display: flex;
-  flex-direction: column;
-  gap: var(--v1AnsGap);
+  position:absolute;
+  left:var(--v1AnswerLeftPct);
+  top:var(--v1AnswerTopPct);
+  width:var(--v1AnswerWidthPct);
+  display:flex;
+  flex-direction:column;
+  gap:var(--v1AnswerGap);
 }
 
 .v1Ans{
-  cursor: pointer;
-  border-radius: 10px;
-  border: 1px solid rgba(43,26,10,0.18);
-  background: rgba(255,255,255,0.10);
-  color: #2b1a0a;
-  font-weight: 900;
-  font-size: var(--v1AnsFont);
-  padding: 10px 14px;
-  text-align: left;
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  transition: transform .08s ease, filter .08s ease;
+  cursor:pointer;
+  height:var(--v1AnswerBtnH);
+  border-radius:10px;
+  border:1px solid rgba(43,26,10,0.18);
+  background:rgba(255,255,255,0.10);
+  color:#2b1a0a;
+  font-weight:900;
+  font-size:var(--v1AnswerFont);
+  padding:4px 12px;
+  text-align:left;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  backdrop-filter:blur(2px);
+  -webkit-backdrop-filter:blur(2px);
+  transition:transform .08s ease, filter .08s ease;
 }
 
 .v1Ans:hover{
-  transform: scale(1.02);
-  filter: brightness(1.08);
+  transform:scale(1.02);
+  filter:brightness(1.08);
 }
 
 .v1Center{
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: #2b1a0a;
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  color:#2b1a0a;
 }
 
+@media (orientation: landscape) and (max-height:520px){
+  :root{
+    --v1QY: 82%;
+    --v1QW: 1120px;
+    --v1QuestionFont: 20px;
+    --v1AnswerBtnH: 34px;
+    --v1AnswerGap: 6px;
+    --v1AnswerFont: 14px;
+  }
+}
 .v1Title{
   font-weight: 900;
   font-size: 22px;
@@ -290,4 +329,87 @@
   background: rgba(0,0,0,0.35);
   color: #fff;
   cursor: pointer;
+}
+/* =========================================================
+   MOBILE LANDSCAPE SAFETY LAYER
+   Add this at the BOTTOM of each major CSS file.
+   ========================================================= */
+
+html,
+body,
+#root{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  background:#000;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+}
+
+button,
+input,
+label{
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (orientation: portrait) and (max-width: 900px){
+  body::before{
+    content:"Rotate your device to landscape";
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:28px;
+    background:#000;
+    color:#fff;
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:0.3px;
+  }
+
+  #root{
+    pointer-events:none;
+    filter:brightness(0.35);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px){
+  button,
+  .primary,
+  .secondary,
+  .fileBtn,
+  .respawnBtn,
+  .v1Exit,
+  .coopExit,
+  .coopBack,
+  .onevoneBack,
+  .dailyBackBtn,
+  .endMenuBtn,
+  .endBackBtn{
+    min-height:38px;
+    font-size:13px;
+    padding:8px 11px;
+  }
+}
+/* =========================================================
+   1V1 SHAKE FIX
+   Preserves the existing translate(-50%, -50%) sprite anchor.
+   ========================================================= */
+
+.v1Enemy.quake,
+.v1Me.quake{
+  animation:v1QuakeAnchored 0.22s linear;
+}
+
+@keyframes v1QuakeAnchored{
+  0%{ transform:translate(-50%, -50%) translate(0,0); }
+  20%{ transform:translate(-50%, -50%) translate(-8px,2px); }
+  40%{ transform:translate(-50%, -50%) translate(8px,-2px); }
+  60%{ transform:translate(-50%, -50%) translate(-6px,-2px); }
+  80%{ transform:translate(-50%, -50%) translate(6px,2px); }
+  100%{ transform:translate(-50%, -50%) translate(0,0); }
 }
