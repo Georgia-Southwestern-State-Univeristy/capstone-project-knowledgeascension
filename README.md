@@ -44,7 +44,7 @@ Installation & Setup
 
 1. Clone Repository
 
-git clone https://github.com/YOUR_USERNAME/knowledge-ascension.git
+git clone
 cd knowledge-ascension
 
 ---
